@@ -2,14 +2,14 @@ from django.db import models
 from django.contrib.auth.models import User
 import random
 import string
-
-# Create your models here.
+import uuid
 
 
 class Category(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     icon = models.ImageField(upload_to='category_icons/', null=True, blank=True)
-    parent_category = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategory')
+    parent_category = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategories_of')
     description = models.TextField(null=True, blank=True)
 
     class Meta:
@@ -21,6 +21,7 @@ class Category(models.Model):
 
 
 class Style(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     style = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
@@ -28,6 +29,7 @@ class Style(models.Model):
 
 
 class SubCategory(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     parent_category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
 
@@ -40,47 +42,42 @@ class SubCategory(models.Model):
 
 
 class Product(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField()
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True, related_name='products')
     image = models.ImageField(upload_to='product_images/')
     specification = models.CharField(max_length=100, blank=True, null=True)
     size = models.CharField(max_length=100, blank=True, null=True)
     color = models.CharField(max_length=100, blank=True, null=True)
     style = models.ForeignKey(Style, on_delete=models.SET_NULL, null=True)
-    style_code = models.CharField(max_length=100, blank=True, null=True)
+    style_code = models.CharField(max_length=10, blank=True, null=True, unique=True)
 
     def __str__(self):
         return self.name
 
-    @property
-    def generate_style_code(self):
-        if self.style:
-            code_length = 10
-            alphanumeric_characters = string.ascii_letters + string.digits
-            return ''.join(random.choice(alphanumeric_characters) for _ in range(code_length))
-        return ""
-
     def save(self, *args, **kwargs):
         if not self.style_code:
-            self.style_code = self.generate_style_code
+            code_length = 10
+            alphanumeric_characters = string.ascii_letters + string.digits
+            self.style_code = ''.join(random.choice(alphanumeric_characters) for _ in range(code_length))
         super().save(*args, **kwargs)
 
 
 class ProductAttribute(models.Model):
     attribute_type = models.CharField(max_length=50)
     attribute_value = models.CharField(max_length=100)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='attributes')
 
     def __str__(self):
         return f"{self.product.name} - {self.attribute_type}: {self.attribute_value}"
 
 
 class ProductReview(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     rating = models.PositiveIntegerField()
     review_text = models.TextField()
@@ -93,7 +90,7 @@ class ProductReview(models.Model):
 
 class FavouriteProduct(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorites')
     date_added = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
