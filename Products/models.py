@@ -9,7 +9,8 @@ class Category(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     icon = models.ImageField(upload_to='category_icons/', null=True, blank=True)
-    parent_category = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategories_of')
+    parent_category = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
+                                        related_name='subcategories_of')
     description = models.TextField(null=True, blank=True)
 
     class Meta:
@@ -41,6 +42,38 @@ class SubCategory(models.Model):
         return self.name
 
 
+class Size(models.Model):
+    SIZE_CHOICES = [
+        ('X', 'X'),
+        ('M', 'M'),
+        ('L', 'L'),
+        ('XL', 'XL'),
+        ('XXL', 'XXL'),
+        ('3XL', '3XL'),
+    ]
+
+    name = models.CharField(max_length=50, choices=SIZE_CHOICES, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Color(models.Model):
+    COLOR_CHOICES = [
+        ('blue', 'Blue'),
+        ('black', 'Black'),
+        ('white', 'White'),
+        ('yellow', 'Yellow'),
+        ('green', 'Green'),
+        ('red', 'Red'),
+    ]
+
+    name = models.CharField(max_length=50, choices=COLOR_CHOICES, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Product(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
@@ -48,13 +81,17 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True, related_name='products')
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True,
+                                    related_name='products')
     image = models.ImageField(upload_to='product_images/')
     specification = models.CharField(max_length=100, blank=True, null=True)
-    size = models.CharField(max_length=100, blank=True, null=True)
-    color = models.CharField(max_length=100, blank=True, null=True)
     style = models.ForeignKey(Style, on_delete=models.SET_NULL, null=True)
     style_code = models.CharField(max_length=10, blank=True, null=True, unique=True)
+    available_sizes = models.ManyToManyField(Size)
+    available_colors = models.ManyToManyField(Color)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
 
     def __str__(self):
         return self.name
@@ -65,15 +102,6 @@ class Product(models.Model):
             alphanumeric_characters = string.ascii_letters + string.digits
             self.style_code = ''.join(random.choice(alphanumeric_characters) for _ in range(code_length))
         super().save(*args, **kwargs)
-
-
-class ProductAttribute(models.Model):
-    attribute_type = models.CharField(max_length=50)
-    attribute_value = models.CharField(max_length=100)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='attributes')
-
-    def __str__(self):
-        return f"{self.product.name} - {self.attribute_type}: {self.attribute_value}"
 
 
 class ProductReview(models.Model):
