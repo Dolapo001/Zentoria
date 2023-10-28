@@ -21,8 +21,7 @@ def custom_response(data, message, status_code, status_text):
 
 
 class ProductListCategory(APIView):
-    @staticmethod
-    def get(request, category_id):
+    def get(self, request, category_id):
         try:
             products = Product.objects.filter(category=category_id)
             serializer = ProductSerializer(products, many=True)
@@ -41,8 +40,7 @@ class ProductListCategory(APIView):
 
 
 class ProductListSubCategory(APIView):
-    @staticmethod
-    def get(request, subcategory_id):
+    def get(self, request, subcategory_id):
         try:
             products = Product.objects.filter(subcategory=subcategory_id)
             serializer = ProductSerializer(products, many=True)
@@ -61,7 +59,6 @@ class ProductListSubCategory(APIView):
 
 
 class CategoryList(APIView):
-    @staticmethod
     def get(self, request):
         try:
             categories = Category.objects.all()
@@ -80,8 +77,7 @@ class CategoryList(APIView):
 
 
 class SubCategoryList(APIView):
-    @staticmethod
-    def get(request):
+    def get(self, request):
         try:
             subcategories = SubCategory.objects.all()
             serializer = SubCategorySerializer(subcategories, many=True)
@@ -132,7 +128,8 @@ class ProductDetail(APIView):
                 },
                 "status": "success",
             }
-            return custom_response(response_data, "Product details retrieved successfully", status.HTTP_200_OK, "success")
+            return custom_response(response_data, "Product details retrieved successfully", status.HTTP_200_OK,
+                                   "success")
 
         except Exception as e:
             data = {
@@ -141,4 +138,157 @@ class ProductDetail(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
 
-#class SimilarProductRecommendation(APIView):
+class SimilarProductRecommendation(APIView):
+    def get(self, request, product_id):
+        try:
+            current_product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return custom_response({}, "Product not found", status.HTTP_404_NOT_FOUND, "error")
+
+        try:
+            similar_products = Product.objects.filter(
+                category = current_product,
+                is_deleted='active',
+                admin_status='approved',
+            ).exclude(id=product_id)
+
+            recommended_products = similar_products[:4]
+
+            serializer = ProductSerializer(recommended_products, many=True)
+
+            data = {
+                "similar_products": serializer.data
+            }
+
+            return custom_response(data, "You might also like", status.HTTP_200_OK, "success")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while while retrieving products you might like: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
+class ProductSearch(APIView):
+    def get(self, request):
+        search_query = request.query_params.get('search', '')
+        try:
+            products = Product.objects.filter(name__icontains=search_query)
+            serializer = ProductSerializer(products, many=True)
+            data = {
+                "products": serializer.data
+            }
+            if not data["products"]:
+                return custom_response(data, "No products Found", status.HTTP_404_NOT_FOUND, "error")
+            return custom_response(data, "Products by Search", status.HTTP_200_OK, "success")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while searching products: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
+#class ProductFilter(APIView):
+    #def get(self, request):
+        #try:
+           # category_id = request.query_params.get('category_id')
+            #subcategory_id = request.query_params.get('category_id')
+            #min_price = request.query_params.get('min_price')
+            #max_price = request.query_params.get('max_price')
+            #condition = request.query_params.get('condition')
+            #buying_format = request.query_params.get('buying_format')
+            #item_location = request.query_params.get('item_location')
+            #show_only = request.query_params.get('show_only')
+
+            #products = Product.objects.all()
+
+            #if category_id:
+            #   products = products.filter(category=category_id)
+
+            #if subcategory_id:
+            #    products = products.filter(subcategory=subcategory_id)
+
+            #if min_price:
+            #   products = products.filter(price__gte=min_price)
+
+            # if max_price:
+            #   products = products.filter(price__lte=max_price)
+
+            #if condition:
+                #products = products.filter(condition=condition)
+
+            #if buying_format:
+                #products = products.filter(buying_format=buying_format)
+
+            # if item_location:
+                #products = products.filter(item_location=item_location)
+
+            #if show_only:
+            #   products = products.filter(show_only=show_only)
+
+            #serializer = ProductSerializer(products, many=True)
+
+            #data = {
+            #    "products": serializer.data
+            #}
+
+            #if not data["products"]:
+            # return custom_response(data, "No products found", status.HTTP_404_NOT_FOUND, "error")
+
+            #return custom_response(data, "Filtered Products", status.HTTP_200_OK, "success")
+
+            #except Exception as e:
+            #data = {
+            #   "error_message": f"An error occurred while filtering products: {str(e)}",
+            #}
+            #return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+class FavouriteProductList(APIView):
+    def get(self, request):
+        user = request.user
+        try:
+            favourite_products = FavouriteProduct.objects.filter(user=user)
+            serializer = FavouriteProductSerializer(favourite_products, many=True)
+            data = {
+                "favourite_products": serializer.data
+            }
+            return custom_response(data, "List of Favourite products", status.HTTP_200_OK, "success")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while retrieving favorite products: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def post(self, request):
+        data = request.data
+        data['user'] = request.user  # Set the current user as the owner
+        serializer = FavouriteProductSerializer(data=data)
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                data = {
+                    "favorite_product": serializer.data
+                }
+                return custom_response(data, "Favorite product added", status.HTTP_201_CREATED, "success")
+            return custom_response(serializer.errors, "Bad request", status.HTTP_400_BAD_REQUEST, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while adding a favorite product: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
+class FavouriteProductDetail(APIView):
+    def delete(self, request, favorite_product_id):
+        user = request.user
+        try:
+            favorite_product = get_object_or_404(FavouriteProduct, id=favorite_product_id, user=user)
+            favorite_product.delete()
+            return custom_response({}, "Favorite product removed", status.HTTP_204_NO_CONTENT, "success")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while removing a favorite product: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
+
