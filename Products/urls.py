@@ -1,5 +1,7 @@
 from django.urls import path
-from .views import ProductListCategory, ProductListSubCategory, CategoryList, SubCategoryList, ProductDetail, SimilarProductRecommendation, FavouriteProductList, FavouriteProductDetail, ProductSearch
+from .views import ProductListCategory, ProductListSubCategory, CategoryList, SubCategoryList, ProductDetail,\
+    SimilarProductRecommendation, FavouriteProductList, FavouriteProductDetail, ProductSearch, \
+    ProductReviewList, ProductReviewDetail
 
 urlpatterns = [
     path('categories/', CategoryList.as_view(), name='category-list'),
@@ -11,4 +13,7 @@ urlpatterns = [
     path('products/search/', ProductSearch.as_view(), name='product-search'),
     path('favorite-products/', FavouriteProductList.as_view(), name='favorite-product-list'),
     path('favorite-products/<int:favorite_product_id>/', FavouriteProductDetail.as_view(), name='favorite-product-detail'),
+    path('product-reviews/', ProductReviewList.as_view(), name='product-review-list'),
+    path('product-reviews-add/', ProductReviewDetail.as_view(), name='product-review-create'),
+    path('product-reviews/<int:review_id>/', ProductReviewDetail.as_view(), name='product-review-detail'),
 ]

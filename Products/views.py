@@ -291,4 +291,71 @@ class FavouriteProductDetail(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
 
+class ProductReviewList(APIView):
+    def get(self, request):
+        try:
+            product_reviews = ProductReview.objects.all()
+            serializer = ProductReviewSerializer(product_reviews, many=True)
+            data = {
+                "product_reviews": serializer.data
+            }
+            return custom_response(data, "List of Product Reviews", status.HTTP_200_OK, "success")
 
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while retrieving product reviews: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
+class ProductReviewDetail(APIView):
+    def get_object(self, review_id):
+        return get_object_or_404(ProductReview, id=review_id)
+
+    def post(self, request):
+        data = request.data
+        data['user'] = request.user
+
+        serializer = ProductReviewSerializer(data=data)
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                data = {
+                    "product_review": serializer.data
+                }
+                return custom_response(data, "Product Review added", status.HTTP_201_CREATED, "success")
+            return custom_response(serializer.errors, "Bad request", status.HTTP_400_BAD_REQUEST, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while adding a product review: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def delete(self, request, review_id):
+        try:
+            review = self.get_object(review_id)
+            review.delete()
+            return custom_response({}, "Product Review removed", status.HTTP_204_NO_CONTENT, "success")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while removing a product review: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def put(self, request, review_id):
+        review = self.get_object(review_id)
+        data = request.data
+        serializer = ProductReviewSerializer(review, data=data)
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                data = {
+                    "product_review": serializer.data
+                }
+                return custom_response(data, "Product Review updated", status.HTTP_200_OK, "success")
+            return custom_response(serializer.errors, "Bad request", status.HTTP_400_BAD_REQUEST, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while updating a product review: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
