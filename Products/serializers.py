@@ -49,10 +49,10 @@ class FavouriteProductSerializer(serializers.ModelSerializer):
 class ColorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Color
-        fields = ('id', 'name', 'hex_code')
+        fields = '__all__'
 
 
 class SizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Size
-        fields = ('id', 'name', 'abbreviation')
+        fields = '__all__'

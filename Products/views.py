@@ -121,12 +121,11 @@ class ProductDetail(APIView):
                 "message": "Product details",
                 "data": {
                     "product": serializer.data,
-                    "colors": color_serializer.data,
+                    "colors": color_serializer.data,  # Display types of colors, not color count
                     "sizes": size_serializer.data,
-                    "reviews": product_review_serializer.data,
+                    "reviews": product_review_serializer.data,  # Display the list of reviews
                     "average_rating": average_rating,
                 },
-                "status": "success",
             }
             return custom_response(response_data, "Product details retrieved successfully", status.HTTP_200_OK,
                                    "success")
@@ -187,61 +186,60 @@ class ProductSearch(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
 
-#class ProductFilter(APIView):
-    #def get(self, request):
-        #try:
-           # category_id = request.query_params.get('category_id')
-            #subcategory_id = request.query_params.get('category_id')
-            #min_price = request.query_params.get('min_price')
-            #max_price = request.query_params.get('max_price')
-            #condition = request.query_params.get('condition')
-            #buying_format = request.query_params.get('buying_format')
-            #item_location = request.query_params.get('item_location')
-            #show_only = request.query_params.get('show_only')
+class ProductFilter(APIView):
+    def get(self, request):
+        try:
+            category_id = request.query_params.get('category_id')
+            subcategory_id = request.query_params.get('subcategory_id')
+            min_price = request.query_params.get('min_price')
+            max_price = request.query_params.get('max_price')
+            condition = request.query_params.get('condition')
+            buying_format = request.query_params.get('buying_format')
+            item_location = request.query_params.get('item_location')
+            show_only = request.query_params.get('show_only')
 
-            #products = Product.objects.all()
+            products = Product.objects.all()
 
-            #if category_id:
-            #   products = products.filter(category=category_id)
+            if category_id:
+                products = products.filter(category=category_id)
 
-            #if subcategory_id:
-            #    products = products.filter(subcategory=subcategory_id)
+            if subcategory_id:
+                products = products.filter(subcategory=subcategory_id)
 
-            #if min_price:
-            #   products = products.filter(price__gte=min_price)
+            if min_price:
+                products = products.filter(price__gte=min_price)
 
-            # if max_price:
-            #   products = products.filter(price__lte=max_price)
+            if max_price:
+                products = products.filter(price__lte=max_price)
 
-            #if condition:
-                #products = products.filter(condition=condition)
+            if condition:
+                products = products.filter(condition=condition)
 
-            #if buying_format:
-                #products = products.filter(buying_format=buying_format)
+            if buying_format:
+                products = products.filter(buying_format=buying_format)
 
-            # if item_location:
-                #products = products.filter(item_location=item_location)
+            if item_location:
+                products = products.filter(item_location=item_location)
 
-            #if show_only:
-            #   products = products.filter(show_only=show_only)
+            if show_only:
+                products = products.filter(show_only=show_only)
 
-            #serializer = ProductSerializer(products, many=True)
+            serializer = ProductSerializer(products, many=True)
 
-            #data = {
-            #    "products": serializer.data
-            #}
+            data = {
+                "products": serializer.data
+            }
 
-            #if not data["products"]:
-            # return custom_response(data, "No products found", status.HTTP_404_NOT_FOUND, "error")
+            if not data["products"]:
+                return custom_response(data, "No products found", status.HTTP_404_NOT_FOUND, "error")
 
-            #return custom_response(data, "Filtered Products", status.HTTP_200_OK, "success")
+            return custom_response(data, "Filtered Products", status.HTTP_200_OK, "success")
 
-            #except Exception as e:
-            #data = {
-            #   "error_message": f"An error occurred while filtering products: {str(e)}",
-            #}
-            #return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
-
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while filtering products: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 class FavouriteProductList(APIView):
     def get(self, request):
         user = request.user
@@ -309,8 +307,6 @@ class ProductReviewList(APIView):
 
 
 class ProductReviewDetail(APIView):
-    def get_object(self, review_id):
-        return get_object_or_404(ProductReview, id=review_id)
 
     def post(self, request):
         data = request.data
@@ -330,6 +326,9 @@ class ProductReviewDetail(APIView):
                 "error_message": f"An error occurred while adding a product review: {str(e)}",
             }
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def get_object(self, review_id):
+        return get_object_or_404(ProductReview, id=review_id)
 
     def delete(self, request, review_id):
         try:
@@ -359,3 +358,4 @@ class ProductReviewDetail(APIView):
                 "error_message": f"An error occurred while updating a product review: {str(e)}",
             }
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+

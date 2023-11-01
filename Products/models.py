@@ -6,7 +6,6 @@ import uuid
 
 
 class Category(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     icon = models.ImageField(upload_to='category_icons/', null=True, blank=True)
     parent_category = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
@@ -22,7 +21,6 @@ class Category(models.Model):
 
 
 class Style(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     style = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
@@ -30,7 +28,6 @@ class Style(models.Model):
 
 
 class SubCategory(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     parent_category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
 
@@ -91,7 +88,7 @@ class Product(models.Model):
     available_colors = models.ManyToManyField(Color)
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
+        super().__init__(*args, **kwargs)
 
     def __str__(self):
         return self.name

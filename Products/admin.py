@@ -1,11 +1,11 @@
 from django.contrib import admin
-from .models import Category, Style, Product, ProductReview, SubCategory, Size, Color
+from .models import Category, Style, Product, FavouriteProduct,\
+    ProductReview, SubCategory, Size, Color
 
 
 # Register your models here.
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['name']
-    list_filter = ['parent_category']
     search_fields = ['name']
 
 
@@ -35,6 +35,11 @@ class ColorAdmin(admin.ModelAdmin):
     list_display = ['name']
 
 
+class FavouriteProductAdmin(admin.ModelAdmin):
+    list_display = ['product']
+
+
+admin.site.register(FavouriteProduct, FavouriteProductAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(SubCategory, SubCategoryAdmin)
 admin.site.register(Category, CategoryAdmin)
