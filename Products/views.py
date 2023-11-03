@@ -7,6 +7,7 @@ from .serializers import (
     CategorySerializer, SubCategorySerializer, ProductSerializer, FavouriteProductSerializer, ColorSerializer,
     SizeSerializer, ProductReviewSerializer
 )
+from .permissions import IsAuthorOrReadOnly
 # Create your views here.
 
 
@@ -290,6 +291,7 @@ class FavouriteProductDetail(APIView):
 
 
 class ProductReviewList(APIView):
+    permission_classes = [IsAuthorOrReadOnly]
     def get(self, request):
         try:
             product_reviews = ProductReview.objects.all()
