@@ -32,9 +32,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include("rest_framework.urls")),
     path("api/v1/", include("Products.urls")),
+    path('accounts/', include('allauth.urls')),
     path('api/v1/',
          include([
+            path('dj-rest-auth/', include("dj_rest_auth.urls")),
             path('swagger/schema/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-schema'),
          ])
          ),
+    path('api/v1/dj-rest-auth/registration/', include('dj_rest_auth.registration.urls')),
 ]
