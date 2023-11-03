@@ -4,3 +4,4 @@ Pillow==10.1.0
 sqlparse==0.4.4
 djangorestframework~=3.14.0
 drf_yasg
+
