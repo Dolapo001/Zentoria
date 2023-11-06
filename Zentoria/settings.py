@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+
+from rest_framework import authtoken
+
 from .jazzmin import JAZZMIN_SETTINGS
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -47,10 +50,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework.authtoken',
     'dj_rest_auth',
+    #'authtoken',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.google'
+    #'allauth.socialaccount.providers.google'
     'dj_rest_auth.registration',
 
     #apps
@@ -60,15 +64,14 @@ INSTALLED_APPS = [
 
 
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": [
+    "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
-    ],
-    "DEFAULT_AUTHENTICATION_CLASSES": [
+    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-    ],
+    ),
 }
-
 
 
 MIDDLEWARE = [
@@ -127,6 +130,12 @@ ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 7
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_REQUIRED = True
+
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/login/'
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/profile/'
+ACCOUNT_EMAIL_CONFIRMATION_SIGNUP_MESSAGE = '/account_confirm_email_message.txt'
+
+
 
 #LOGOUT_REDIRECT_URL = '/'
 
