@@ -31,7 +31,7 @@ class ProductListCategory(APIView):
             }
             if not data["products"]:
                 return custom_response(data, "No products found", status
-                                       .HTTP_404_NOT_FOUND, "error")
+                                       .HTTP_200_OK, "success")
             return custom_response(data, "List of Products by Category", status.HTTP_200_OK, "success")
         except Exception as e:
             data = {
