@@ -51,10 +51,12 @@ INSTALLED_APPS = [
     'drf_yasg',
     'corsheaders',
     'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 
-
-
-    #'a
     #apps
     'Products.apps.ProductsConfig',
     'accounts.apps.AccountsConfig',
@@ -64,15 +66,19 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.TokenAuthentication",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        #'dj_rest_auth.authentication.AllAuthJWTAuthentication',
         "social_core.backends.google.GoogleOAuth2",
-    ),
+    ],
 }
 
+
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('JWT',),
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
