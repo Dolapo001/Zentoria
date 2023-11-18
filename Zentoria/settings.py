@@ -47,36 +47,41 @@ INSTALLED_APPS = [
 
     #thirdparty
     'rest_framework',
-    'social_django',
-    'drf_yasg',
+    #'drf_yasg',
+    'drf_spectacular',
     'corsheaders',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
 
-    #apps
+    #local_apps
     'Products.apps.ProductsConfig',
     'accounts.apps.AccountsConfig',
 ]
 
 
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
+    "COERCE_DECIMAL_TO_STRING": False,
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        #"rest_framework.authentication.SessionAuthentication",
         "social_core.backends.google.GoogleOAuth2",
     ],
 }
 
 
 SIMPLE_JWT = {
-    'AUTH_HEADER_TYPES': ('JWT',),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "ZENTORIA API",
+    "DESCRIPTION": """""",
+    "VERSION": "1.0.0",
+    "SCHEMA_PATH_PREFIX": r'/api/v[0-9]',
+    "SERVE_INCLUDE_SCHEMA": False,
+    "DISABLE_ERRORS_AND_WARNINGS": True,
 }
 
 MIDDLEWARE = [

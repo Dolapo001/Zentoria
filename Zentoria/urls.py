@@ -16,31 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view as swagger_get_schema_view
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
-#from accounts.views import GoogleAuthView
 
-schema_view = swagger_get_schema_view(
-    openapi.Info(
-        title="Zentoria_Api",
-        default_version="1.0.0",
-        description="API documentation of Zentoria",
-    ),
-    public=True
-)
+
+urlpatterns_v1 = [
+    path("accounts/", include("accounts.urls")),
+    path("products/", include("Products.urls")),
+]
 
 urlpatterns = [
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path('admin/', admin.site.urls),
-    #path('api-auth/', include("rest_framework.urls")),
-    #path('auth/', include('social_django.urls', namespace='social')),
-    path("api/v1/", include("Products.urls")),
-    path('api/v1/', include('accounts.urls')),
-    path('api/v1/',
-         include([
-            path('swagger/schema/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-schema'),
-         ])
-         ),
-    #path('api/v1/auth/google/', GoogleAuthView.as_view(), name='google-auth'),
-
+    path("api/v1/", include(urlpatterns_v1)),
 ]
+
+

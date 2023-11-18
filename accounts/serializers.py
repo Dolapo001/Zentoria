@@ -70,7 +70,6 @@ class RegisterSerializer(BaseSerializer):
     email = serializers.EmailField()
     fullname = serializers.CharField(max_length=255)
     password1 = serializers.CharField(max_length=50, min_length=6, write_only=True)
-    password2 = serializers.CharField(max_length=50, min_length=6, write_only=True)
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -85,8 +84,6 @@ class RegisterSerializer(BaseSerializer):
             raise serializers.ValidationError({"message": "Full Name required"})
         return attrs
 
-    def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
 
 
 class RequestEmailChangeCodeSerializer(BaseSerializer):

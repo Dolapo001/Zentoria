@@ -22,8 +22,8 @@ class CustomUserAdmin(BaseUserAdmin):
 
 
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'fullname', 'profile_picture', 'phone_number')
-    search_fields = ('user__username', 'fullname', 'phone_number')
+    list_display = ('user', 'phone_number', 'address')
+    search_fields = ('user__username', 'phone_number', 'address')
 
 
 admin.site.register(User, CustomUserAdmin)
