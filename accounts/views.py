@@ -1,213 +1,39 @@
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from django.contrib.auth import login
-from rest_framework.authtoken.models import Token
-from .serializers import (
-    ChangeEmailSerializer,
-    LoginSerializer,
-    ChangePasswordSerializer,
-    ProfileSerializer,
-    RegisterSerializer,
-    RequestEmailChangeCodeSerializer,
-    ResendEmailVerificationSerializer,
-    RequestNewPasswordCodeSerializer,
-    UpdateProfileSerializer,
-    SendOTPSerializer,
-    ResendOTPSerializer,
-)
+from rest_framework_simplejwt.tokens import RefreshToken
+from .serializers import \
+    RegisterSerializer, \
+    ResendOTPSerializer, \
+    ResendEmailVerificationSerializer,\
+    ProfileSerializer, \
+    ChangeEmailSerializer, \
+    ChangePasswordSerializer, \
+    RequestEmailChangeCodeSerializer, \
+    RequestNewPasswordCodeSerializer, \
+    UpdateProfileSerializer, \
+    LoginSerializer, \
+    SendOTPSerializer
 
-def custom_response(data, message, status_code, status_text):
+
+def custom_response(data, message, status_code, status_text=None):
     response_data = {
         "status_code": status_code,
         "message": message,
         "data": data,
-        "status": status_text,
     }
+
+    if status_text is not None:
+        response_data["status"] = status_text
+
     return Response(response_data, status=status_code)
 
-class ChangeEmailView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        try:
-            serializer = ChangeEmailSerializer(data=request.data)
-            if serializer.is_valid():
-                # Your logic for changing email
-                return custom_response(None, 'Email changed successfully', status.HTTP_200_OK, 'success')
-
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while changing email: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-class LoginView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        try:
-            serializer = LoginSerializer(data=request.data)
-            if serializer.is_valid():
-                # Your logic for login
-                return custom_response(None, 'Login success', status.HTTP_200_OK, 'success')
-
-            return custom_response(None, 'Login failed', status.HTTP_401_UNAUTHORIZED, 'Unauthorized')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred during login: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-class ChangePasswordView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        try:
-            serializer = ChangePasswordSerializer(data=request.data)
-            if serializer.is_valid():
-                # Your logic for changing password
-                return custom_response(None, 'Password changed successfully', status.HTTP_200_OK, 'success')
-
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while changing password: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-class ProfileView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        try:
-            user = request.user
-            serializer = ProfileSerializer(user)
-            return custom_response(serializer.data, 'Profile retrieved successfully', status.HTTP_200_OK, 'success')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while retrieving profile: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-    def put(self, request):
-        user = request.user
-        serializer = UpdateProfileSerializer(user, data=request.data)
-        try:
-            if serializer.is_valid():
-                serializer.save()
-                return custom_response(serializer.data, 'Profile updated successfully', status.HTTP_200_OK, 'success')
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while updating profile: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-class RegisterView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        try:
-            serializer = RegisterSerializer(data=request.data)
-            if serializer.is_valid():
-                # Your logic for registration
-                return custom_response(None, 'Registration success', status.HTTP_201_CREATED, 'success')
-
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred during registration: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-class RequestEmailChangeCodeView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        try:
-            serializer = RequestEmailChangeCodeSerializer(data=request.data)
-            if serializer.is_valid():
-                # Your logic for requesting email change code
-                return custom_response(None, 'Email change code sent successfully', status.HTTP_200_OK, 'success')
-
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while requesting email change code: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-class ResendEmailVerificationView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        try:
-            serializer = ResendEmailVerificationSerializer(data=request.data)
-            if serializer.is_valid():
-                # Your logic for resending email verification
-                return custom_response(None, 'Email verification resent successfully', status.HTTP_200_OK, 'success')
-
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while resending email verification: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-class RequestNewPasswordCodeView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        try:
-            serializer = RequestNewPasswordCodeSerializer(data=request.data)
-            if serializer.is_valid():
-                # Your logic for requesting new password code
-                return custom_response(None, 'New password code sent successfully', status.HTTP_200_OK, 'success')
-
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while requesting new password code: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-class SendOTPSerializerView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        try:
-            serializer = SendOTPSerializer(data=request.data)
-            if serializer.is_valid():
-                # Your logic for sending OTP
-                return custom_response(None, 'OTP sent successfully', status.HTTP_200_OK, 'success')
-
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while sending OTP: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
-
-class ResendOTPSerializerView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        try:
-            serializer = ResendOTPSerializer(data=request.data)
-            if serializer.is_valid():
-                # Your logic for resending OTP
-                return custom_response(None, 'OTP resent successfully', status.HTTP_200_OK, 'success')
-
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while resending OTP: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
 
 class UserRegistrationView(APIView):
+
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -215,19 +41,114 @@ class UserRegistrationView(APIView):
             serializer = RegisterSerializer(data=request.data)
             if serializer.is_valid():
                 user = serializer.save()
-                token, created = Token.objects.get_or_create(user=user)
+                refresh = RefreshToken.for_user(user)
+                access_token = refresh.access_token
+
                 user_serializer = ProfileSerializer(user)
-                response_data = {
-                    'token': token.key,
+                data = {
+                    'access_token': str(access_token),
                     'user': user_serializer.data,
                 }
-                return Response(response_data, status=status.HTTP_201_CREATED)
+                return custom_response(data, "User created successfully", status.HTTP_201_CREATED, "success")
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return custom_response(serializer.errors, "Bad request", status
+                                   .HTTP_400_BAD_REQUEST, "error")
         except Exception as e:
             data = {
                 "error_message": f"An error occurred during registration: {str(e)}",
             }
-            return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
-# Add other views for remaining serializers in a similar manner
+
+class LoginView(TokenObtainPairView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            response = super().post(request, *args, **kwargs)
+
+            if response.status_code == status.HTTP_200_OK:
+
+                user = response.data.get('user', {})
+                access_token = response.data.get('access_token', '')
+
+                custom_data = {
+                    'user_id': user.get('id', ''),
+                    'username': user.get('username', ''),
+                    'last_login': user.get('last_login', ''),
+
+                }
+
+                custom_response_data = {
+                    'access_token': access_token,
+                    'user': custom_data,
+                }
+
+                return custom_response(custom_response_data, "Login successful", status.HTTP_200_OK, "success")
+
+            return response
+
+        except TokenError as e:
+            data = {
+                'error_message': f"Token error: {str(e)}",
+            }
+            return custom_response(data, "Token error", status.HTTP_401_UNAUTHORIZED, "error")
+
+        except Exception as e:
+            data = {
+                'error_message': f"An error occurred during login: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
+class RefreshTokenView(TokenRefreshView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = TokenRefreshSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            response = super().post(request, *args, **kwargs)
+
+            if response.status_code == status.HTTP_200_OK:
+                user = response.data['user']
+                refresh = RefreshToken(response.data['refresh'])
+                access_token = refresh.access_token
+                response.data = {
+                    'access_token': str(access_token),
+                    'user': user,
+                }
+
+            return response
+
+        except TokenError as e:
+            data = {
+                "error_message": f"An error occurred during token refresh: {str(e)}",
+            }
+            return custom_response(data, status.HTTP_401_UNAUTHORIZED, "error")
+
+
+class Logout(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh_token')
+
+            if not refresh_token:
+                return custom_response({}, 'Refresh token not provided', status.HTTP_400_BAD_REQUEST, 'error')
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+
+                return custom_response({}, "Logout successful", status.HTTP_200_OK, "success")
+            except Exception as e:
+                return custom_response({}, f"Invalid refresh token: {str(e)}", status.HTTP_401_UNAUTHORIZED, "error")
+
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred during logout: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
+

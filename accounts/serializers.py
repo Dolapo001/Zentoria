@@ -69,7 +69,8 @@ class ProfileSerializer(serializers.Serializer):
 class RegisterSerializer(BaseSerializer):
     email = serializers.EmailField()
     fullname = serializers.CharField(max_length=255)
-    password = serializers.CharField(max_length=50, min_length=6, write_only=True)
+    password1 = serializers.CharField(max_length=50, min_length=6, write_only=True)
+    password2 = serializers.CharField(max_length=50, min_length=6, write_only=True)
 
     def validate(self, attrs):
         email = attrs.get('email')

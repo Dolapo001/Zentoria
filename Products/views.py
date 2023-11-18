@@ -143,7 +143,7 @@ class SimilarProductRecommendation(APIView):
         try:
             current_product = Product.objects.get(id=product_id)
         except Product.DoesNotExist:
-            return custom_response({}, "Product not found", status.HTTP_404_NOT_FOUND, "error")
+            return custom_response({}, "Product not found", status.HTTP_200_OK, "success")
 
         try:
             similar_products = Product.objects.filter(

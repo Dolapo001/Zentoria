@@ -32,10 +32,10 @@ schema_view = swagger_get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api-auth/', include("rest_framework.urls")),
-    path('auth/', include('social_django.urls', namespace='social')),
+    #path('api-auth/', include("rest_framework.urls")),
+    #path('auth/', include('social_django.urls', namespace='social')),
     path("api/v1/", include("Products.urls")),
-    #path('api/v1/', include('accounts.urls')),
+    path('api/v1/', include('accounts.urls')),
     path('api/v1/',
          include([
             path('swagger/schema/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-schema'),
