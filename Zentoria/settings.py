@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -47,8 +48,9 @@ INSTALLED_APPS = [
 
     #thirdparty
     'rest_framework',
-    #'drf_yasg',
     'drf_spectacular',
+    'allauth',
+    'allauth.account',
     'corsheaders',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
@@ -72,7 +74,8 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
 }
 
 SPECTACULAR_SETTINGS = {

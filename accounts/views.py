@@ -1,34 +1,37 @@
 import string
-
-from .models import User
-
+from django.db import IntegrityError
+from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.utils.html import strip_tags
 from pyotp import random
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import \
-    RegisterSerializer, \
-    ResendOTPSerializer, \
-    ResendEmailVerificationSerializer,\
-    ProfileSerializer, \
-    ChangeEmailSerializer, \
-    ChangePasswordSerializer, \
-    RequestEmailChangeCodeSerializer, \
-    RequestNewPasswordCodeSerializer, \
-    UpdateProfileSerializer, \
-    LoginSerializer, \
+from .models import User, Profile
+from .serializers import (
+    RegisterSerializer,
+    ResendOTPSerializer,
+    ResendEmailVerificationSerializer,
+    ProfileSerializer,
+    ChangeEmailSerializer,
+    ChangePasswordSerializer,
+    RequestEmailChangeCodeSerializer,
+    RequestNewPasswordCodeSerializer,
+    UpdateProfileSerializer,
+    LoginSerializer,
     SendOTPSerializer
+)
 from django.http import JsonResponse
 
 
-def custom_response(data, message, status_code, status_text=None):
+
+def custom_response(data, message, status_code, status_text=None, tokens=None):
     # Convert status_code to integer
     status_code = int(status_code)
 
@@ -41,8 +44,10 @@ def custom_response(data, message, status_code, status_text=None):
     if status_text is not None:
         response_data["status"] = status_text
 
-    return JsonResponse(response_data, status=status_code)
+    if tokens is not None:
+        response_data["tokens"] = tokens
 
+    return JsonResponse(response_data, status=status_code)
 
 
 class UserRegistrationView(APIView):
@@ -53,76 +58,61 @@ class UserRegistrationView(APIView):
         serializer.is_valid(raise_exception=True)
 
         validated_data = serializer.validated_data
-        User.objects.create_user(**validated_data)
-        return custom_response("User created successfully", status.HTTP_201_CREATED, "success")
+        password = validated_data.pop('password1', None)
+
+        try:
+            user, created = User.objects.get_or_create(username=validated_data['username'],
+                                                       defaults={'password': password})
+            if created:
+                return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({"message": "Username already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except IntegrityError:
+            return Response({"message": "An error occurred during user creation"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class LoginView(TokenObtainPairView):
-    permission_classes = [permissions.AllowAny]
+    serializer_class = TokenObtainPairSerializer
 
-    def post(self, request, *args, **kwargs):
-        try:
-            response = super().post(request, *args, **kwargs)
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        email = validated_data["email"]
+        password = validated_data["password"]
+        user = authenticate(request, email=email, password=password)
 
-            if response.status_code == status.HTTP_200_OK:
+        if user:
+            tokens = super().post(request)
+            data = {"email": user.email, "fullname": user.fullname}
 
-                user = response.data.get('user', {})
-                access_token = response.data.get('access_token', '')
-
-                custom_data = {
-                    'user_id': user.get('id', ''),
-                    'username': user.get('username', ''),
-                    'last_login': user.get('last_login', ''),
-
-                }
-
-                custom_response_data = {
-                    'access_token': access_token,
-                    'user': custom_data,
-                }
-
-                return custom_response(custom_response_data, "Login successful", status.HTTP_200_OK, "success")
-
-            return response
-
-        except TokenError as e:
-            data = {
-                'error_message': f"Token error: {str(e)}",
-            }
-            return custom_response(data, "Token error", status.HTTP_401_UNAUTHORIZED, "error")
-
-        except Exception as e:
-            data = {
-                'error_message': f"An error occurred during login: {str(e)}",
-            }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+            return custom_response(
+                data=data,
+                message="Logged in successfully",
+                status_code=status.HTTP_200_OK,
+                status_text="success",
+                tokens=tokens.data
+            )
+        else:
+            return custom_response("Invalid credentials", status.HTTP_400_BAD_REQUEST)
 
 
 class RefreshTokenView(TokenRefreshView):
-    permission_classes = [permissions.AllowAny]
     serializer_class = TokenRefreshSerializer
 
-    def post(self, request, *args, **kwargs):
-        try:
-            response = super().post(request, *args, **kwargs)
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        access_token = validated_data.get('access')  # Use get method to safely access the 'access' key
 
-            if response.status_code == status.HTTP_200_OK:
-                user = response.data['user']
-                refresh = RefreshToken(response.data['refresh'])
-                access_token = refresh.access_token
-                response.data = {
-                    'access_token': str(access_token),
-                    'user': user,
-                }
-
-            return response
-
-        except TokenError as e:
-            data = {
-                "error_message": f"An error occurred during token refresh: {str(e)}",
-            }
-            return custom_response(data, status.HTTP_401_UNAUTHORIZED, "error")
-
+        return Response({
+            "message": "Refreshed successfully",
+            "token": access_token,
+            "status": "success"
+        }, status=status.HTTP_200_OK)
 
 class Logout(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -158,7 +148,8 @@ class ChangeEmailView(APIView):
                 # Your logic for changing email
                 return custom_response(None, 'Email changed successfully', status.HTTP_200_OK, 'success')
 
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
+            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST,
+                                   'bad request')
         except Exception as e:
             data = {
                 "error_message": f"An error occurred while changing email: {str(e)}",
@@ -176,7 +167,8 @@ class ChangePasswordView(APIView):
                 # Your logic for changing password
                 return custom_response(None, 'Password changed successfully', status.HTTP_200_OK, 'success')
 
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
+            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST,
+                                   'bad request')
         except Exception as e:
             data = {
                 "error_message": f"An error occurred while changing password: {str(e)}",
@@ -205,7 +197,8 @@ class ProfileView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return custom_response(serializer.data, 'Profile updated successfully', status.HTTP_200_OK, 'success')
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
+            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST,
+                                   'bad request')
         except Exception as e:
             data = {
                 "error_message": f"An error occurred while updating profile: {str(e)}",
@@ -373,7 +366,8 @@ class UpdateProfileView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return custom_response(serializer.data, 'Profile updated successfully', status.HTTP_200_OK, 'success')
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST, 'bad request')
+            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST,
+                                   'bad request')
         except Exception as e:
             data = {
                 "error_message": f"An error occurred while updating profile: {str(e)}",

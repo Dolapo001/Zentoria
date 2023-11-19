@@ -1,24 +1,24 @@
-# accounts/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Profile
 
 
 class CustomUserAdmin(BaseUserAdmin):
-    list_display = ('username', 'email', 'gender', 'birthday', 'is_staff')
-    search_fields = ('username', 'email')
+    list_display = ('email', 'gender', 'birthday', 'is_staff')
+    search_fields = ('email', 'username')
     list_filter = ('is_active', 'is_staff', 'gender')
     fieldsets = (
-        (None, {'fields': ('username', 'email', 'password')}),
+        (None, {'fields': ('email', 'username', 'password')}),
         ('Personal info', {'fields': ('gender', 'birthday')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'password1', 'password2')}
+            'fields': ('email', 'username', 'password1', 'password2')}
          ),
     )
+    ordering = ['email']
 
 
 class UserProfileAdmin(admin.ModelAdmin):

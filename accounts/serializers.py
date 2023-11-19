@@ -66,22 +66,31 @@ class ProfileSerializer(serializers.Serializer):
         return attrs
 
 
-class RegisterSerializer(BaseSerializer):
+class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     fullname = serializers.CharField(max_length=255)
+    username = serializers.CharField(max_length=150)  # Add 'username' field
     password1 = serializers.CharField(max_length=50, min_length=6, write_only=True)
 
     def validate(self, attrs):
         email = attrs.get('email')
         fullname = attrs.get('fullname')
+        username = attrs.get('username')  # Retrieve 'username' from attrs
 
         existing_email = User.objects.filter(email=email)
         if existing_email.exists():
             raise serializers.ValidationError({"message": "Email already registered"})
+
+        # You may want to add a similar check for existing usernames
+        existing_username = User.objects.filter(username=username)
+        if existing_username.exists():
+            raise serializers.ValidationError({"message": "Username already exists"})
+
         validate_email_format(email)
 
         if not fullname:
             raise serializers.ValidationError({"message": "Full Name required"})
+
         return attrs
 
 
