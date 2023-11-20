@@ -20,9 +20,19 @@ class CustomUserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    MALE = 'M'
+    FEMALE = 'F'
+    OTHER = 'O'
+
+    GENDER_CHOICES = [
+        (MALE, 'Male'),
+        (FEMALE, 'Female'),
+        (OTHER, 'Other'),
+    ]
     email = models.EmailField(unique=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     fullname = models.CharField(max_length=100, default='')
+    username = models.CharField(max_length=30, unique=True, default='')
     gender = models.CharField(max_length=10, choices=[('male', 'Male'), ('female', 'Female')], blank=True)
     birthday = models.DateField(blank=True, null=True)
 
@@ -46,4 +56,6 @@ class Profile(models.Model):
     address = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return self.user
+        return self.username
+
+

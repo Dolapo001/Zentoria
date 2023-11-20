@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from datetime import timedelta
 from pathlib import Path
 import os
+
+from django.template.context_processors import static
 from dotenv import load_dotenv
 
 from rest_framework import authtoken
@@ -108,6 +110,8 @@ CORS_ORIGIN_WHITELIST = (
 CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 
 AUTH_USER_MODEL = "accounts.User"
+LOGIN_URL = '/accounts/login/'
+
 
 ROOT_URLCONF = 'Zentoria.urls'
 
@@ -130,7 +134,7 @@ TEMPLATES = [
 ]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 SITE_ID = 1
 
 WSGI_APPLICATION = 'Zentoria.wsgi.application'
@@ -189,7 +193,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -203,9 +211,6 @@ JAZZMIN_SETTINGS = JAZZMIN_SETTINGS
 load_dotenv()
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
-
-
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
 
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 7

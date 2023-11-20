@@ -47,11 +47,13 @@ class ChangePasswordSerializer(BaseSerializer):
         if not code:
             raise serializers.ValidationError({"message": "code is required", "status": "failed"})
 
+
 class ProfileSerializer(serializers.Serializer):
     email = serializers.EmailField(source="user.email")
     username = serializers.CharField(source="user.username")
     full_name = serializers.CharField(source="user.full_name")
-    gender = serializers.ChoiceField(choices="user.gender")
+    gender = serializers.ChoiceField(choices=User.GENDER_CHOICES)
+
     birthday = serializers.DateField()
     phone_number = serializers.CharField(max_length=20, validators=[validate_phone_number])
     profile_picture = serializers.ImageField(validators=[validate_image_size])
@@ -69,13 +71,13 @@ class ProfileSerializer(serializers.Serializer):
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     fullname = serializers.CharField(max_length=255)
-    username = serializers.CharField(max_length=150)  # Add 'username' field
-    password1 = serializers.CharField(max_length=50, min_length=6, write_only=True)
+    username = serializers.CharField(max_length=30, write_only=True)
+    password = serializers.CharField(max_length=50, min_length=6, write_only=True)
 
     def validate(self, attrs):
         email = attrs.get('email')
         fullname = attrs.get('fullname')
-        username = attrs.get('username')  # Retrieve 'username' from attrs
+        username = attrs.get('username')
 
         existing_email = User.objects.filter(email=email)
         if existing_email.exists():
@@ -92,7 +94,6 @@ class RegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError({"message": "Full Name required"})
 
         return attrs
-
 
 
 class RequestEmailChangeCodeSerializer(BaseSerializer):
@@ -139,6 +140,12 @@ class UpdateProfileSerializer(serializers.Serializer):
         picture = attrs.get('profile_picture')
         validate_image_size(picture)
         return attrs
+
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+            instance.save()
+        return instance
 
 
 class SendOTPSerializer(BaseSerializer):
