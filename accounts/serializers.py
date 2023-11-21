@@ -51,12 +51,12 @@ class ChangePasswordSerializer(BaseSerializer):
 class ProfileSerializer(serializers.Serializer):
     email = serializers.EmailField(source="user.email")
     username = serializers.CharField(source="user.username")
-    full_name = serializers.CharField(source="user.full_name")
-    gender = serializers.ChoiceField(choices=User.GENDER_CHOICES)
-
-    birthday = serializers.DateField()
-    phone_number = serializers.CharField(max_length=20, validators=[validate_phone_number])
-    profile_picture = serializers.ImageField(validators=[validate_image_size])
+    full_name = serializers.CharField(source="user.fullname")
+    gender = serializers.ChoiceField(choices=User.GENDER_CHOICES, source="user.gender")
+    birthday = serializers.DateField(source="user.birthday")
+    phone_number = serializers.CharField
+    profile_picture = serializers.ImageField(source="user.profile_picture")
+    address = serializers.CharField
 
     def validate_phone_number(self, value):
         validate_phone_number(value)
@@ -78,13 +78,13 @@ class RegisterSerializer(serializers.Serializer):
         email = attrs.get('email')
         fullname = attrs.get('fullname')
         username = attrs.get('username')
+        password = attrs.get('password')
 
         existing_email = User.objects.filter(email=email)
         if existing_email.exists():
             raise serializers.ValidationError({"message": "Email already registered"})
 
-        # You may want to add a similar check for existing usernames
-        existing_username = User.objects.filter(username=username)
+        existing_username = Profile.objects.filter(username=username)
         if existing_username.exists():
             raise serializers.ValidationError({"message": "Username already exists"})
 

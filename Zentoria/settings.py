@@ -109,9 +109,8 @@ CORS_ORIGIN_WHITELIST = (
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 
-AUTH_USER_MODEL = "accounts.User"
-LOGIN_URL = '/accounts/login/'
 
+AUTH_USER_MODEL = 'accounts.User'
 
 ROOT_URLCONF = 'Zentoria.urls'
 
@@ -193,11 +192,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
+
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    os.path.join(BASE_DIR, "static"),
 ]
-STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

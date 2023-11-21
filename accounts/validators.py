@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 import re
 from django.core.validators import validate_email
+from django.utils import timezone
 
 
 def validate_email_format(value):
@@ -28,4 +29,6 @@ def validate_image_size(value):
         raise ValidationError("Image size should be less than 5MB")
 
 
-
+def validate_date(value):
+    if value is not None and value > timezone.now().date():
+        raise ValidationError("Birthday must be in the past.")
