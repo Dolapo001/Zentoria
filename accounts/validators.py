@@ -12,8 +12,8 @@ def validate_email_format(value):
 
 
 def validate_code(value):
-    if not re.match("^[0-9]{4}$", str(value)):
-        raise ValidationError("Code must be a 4-digit number")
+    if not re.match("^[0-9]{6}$", str(value)):
+        raise ValidationError("Code must be a 6-digit number")
 
 
 def validate_phone_number(value):

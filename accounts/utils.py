@@ -2,6 +2,9 @@ from rest_framework.response import Response
 
 
 class ErrorCode:
+    OLD_EMAIL = 'old email'
+    EXPIRED_OTP = 'expired otp'
+    INCORRECT_OTP = 'incorrect otp'
     INVALID_CREDENTIALS = 'invalid_credentials'
     UNVERIFIED_USER = 'unverified_user'
     NON_EXISTENT = 'non_existent'

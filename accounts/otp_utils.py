@@ -19,3 +19,13 @@ def get_or_generate_otp_secret(user):
 def generate_otp(secret, interval=600):
     totp = pyotp.TOTP(secret, interval=interval)
     return totp.now()
+
+
+def validate_otp(user, otp_input):
+    try:
+        otp_secret = get_object_or_404(OTP, user=user)
+
+        totp = pyotp.TOTP(otp_secret.secret, interval=600)
+        return totp.verify(otp_input)
+    except Http404:
+        return False

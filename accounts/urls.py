@@ -11,7 +11,7 @@ from .views import (
     SendOTPView,
     ResendOTPSerializerView,
     ChangeEmailView,
-    RequestNewPasswordCodeView
+    AccountVerificationView
 )
 
 urlpatterns = [
@@ -26,5 +26,5 @@ urlpatterns = [
     path('send-otp/', SendOTPView.as_view(), name='send-otp'),
     path('resend-otp/', ResendOTPSerializerView.as_view(), name='resend-otp'),
     path('change-email/', ChangeEmailView.as_view(), name='change-email'),
-    path('request-new-password-code/', RequestNewPasswordCodeView.as_view(), name='request-new-password-code'),
+    path('account-verification/', AccountVerificationView.as_view(), name='account-verification'),
 ]

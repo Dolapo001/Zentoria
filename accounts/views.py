@@ -1,5 +1,9 @@
 import string
 import random
+from django.utils import timezone
+from datetime import timedelta
+import pyotp
+from .utils import RequestError, ErrorCode, Response, CustomResponse
 from django.db import IntegrityError
 from django.contrib.auth import authenticate
 from django.template.loader import render_to_string
@@ -21,11 +25,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from .emails import send_mail, send_otp_email
 from .models import OTP, User, Profile
-from .otp_utils import get_or_generate_otp_secret, generate_otp
+from .otp_utils import get_or_generate_otp_secret, generate_otp, validate_otp
 from .serializers import (
     RegisterSerializer,
     ResendOTPSerializer,
-    UpdateProfileSerializer,
+    VerificationSerializer,
     ResendEmailVerificationSerializer,
     ProfileSerializer,
     ChangeEmailSerializer,
@@ -156,19 +160,25 @@ class ProfileView(APIView):
 
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = ChangePasswordSerializer
 
     def post(self, request):
-        try:
-            serializer = ChangePasswordSerializer(data=request.data)
-            if serializer.is_valid():
-                return custom_response(None, 'Password changed successfully', status.HTTP_200_OK, 'success')
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            validated_data = serializer.validated_data
+            old_password = validated_data.get("old_password")
+            new_password = validated_data.get("new_password")
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            data = {
-                "error_message": f"An error occurred while changing password: {str(e)}",
-            }
-            return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            user = authenticate(request, old_password=old_password)
+
+            if user:
+                user.set_password(new_password)
+                user.save()
+                return custom_response(None, 'Password changed successfully', status.HTTP_200_OK, 'success')
+            else:
+                return custom_response(None, 'Invalid old password', status.HTTP_400_BAD_REQUEST, 'error')
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RequestEmailChangeCodeView(APIView):
@@ -274,51 +284,66 @@ class ChangeEmailView(APIView):
 
     def post(self, request):
         try:
-            serializer = self.serializer_class(data=request.data)
-            if serializer.is_valid():
-                user = request.user
-                new_email = serializer.validated_data['email']
+            serializer = self.serializer_class(data=self.request.data)
+            serializer.is_valid(raise_exception=True)
+            new_email = serializer.validated_data.get('email')
+            code = self.request.data.get('code')
+            user = self.request.user
+            otp = get_or_generate_otp_secret(user)
 
-                otp_secret = get_or_generate_otp_secret(user)
-                otp = generate_otp(otp_secret.secret)
+            current_time = timezone.now()
+            expiration_time = otp.created + timedelta(mintues=10)
 
-                user.email_change_code = otp
-                user.save()
+            if current_time > expiration_time:
+                raise RequestError(err_code=ErrorCode.EXPIRED_OTP, err_msg="OTP has expired",
+                                       status_code=status.HTTP_400_BAD_REQUEST)
 
-                send_otp_email(user, email=new_email, template='email_change_verification.html')
+            totp = pyotp.TOTP(otp.secret, interval=600)
+            if not totp.verify(code):
+                raise RequestError(err_code=ErrorCode.INCORRECT_OTP, err_msg="Invalid OTP",
+                                       status_code=status.HTTP_400_BAD_REQUEST)
 
-                return Response({'message': 'Email change code sent successfully'}, status=status.HTTP_200_OK)
+            if user.email == new_email:
+                raise RequestError(err_code=ErrorCode.OLD_EMAIL, err_msg="You can't use your previous email")
+            user.email = new_email
+            user.email_changed = True
+            user.save()
+            otp.delete()
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return CustomResponse.success(message="Email changed successfully.")
+
+        except RequestError as re:
+            return Response({'error_message': str(re)}, status=re.status_code)
+
         except Exception as e:
             data = {
                 "error_message": f"An error occurred while changing email: {str(e)}",
             }
-            return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return custom_response(data, status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
 
-class RequestNewPasswordCodeView(APIView):
+class AccountVerificationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
-            serializer = RequestNewPasswordCodeSerializer(data=request.data)
+            serializer = VerificationSerializer(data=request.data)
             if serializer.is_valid():
-                email = serializer.validated_data['email']
+                user = request.user
+                verification_code = serializer.validated_data['verification_code']
+                otp = serializer.validated_data['otp']
 
-                send_otp_serializer = SendOTPSerializer(data={'email': email})
-                if send_otp_serializer.is_valid():
-                    send_otp_serializer.save()
+                if user.profile.verification_code == verification_code and validate_otp(user, otp):
+                    user.profile.is_verified = True
+                    user.profile.save()
 
-                    send_otp_email(send_otp_serializer.instance.user, email=email, template='new_password_code_template.html')
-
-                    return Response({'message': 'New password code sent successfully'}, status=status.HTTP_200_OK)
+                    return Response({'message': 'Account successfully verified'}, status=status.HTTP_200_OK)
                 else:
-                    return Response(send_otp_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'error': 'Invalid verification code or OTP'}, status=status.HTTP_400_BAD_REQUEST)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             data = {
-                "error_message": f"An error occurred while requesting new password code: {str(e)}",
+                "error_message": f"An error occurred during account verification: {str(e)}",
             }
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

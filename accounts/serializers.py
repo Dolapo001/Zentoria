@@ -39,13 +39,9 @@ class LoginSerializer(BaseSerializer):
         return attrs
 
 
-class ChangePasswordSerializer(BaseSerializer):
-    code = serializers.IntegerField(validators=[validate_code])
-
-    def validate(self, attrs):
-        code = attrs.get('code')
-        if not code:
-            raise serializers.ValidationError({"message": "code is required", "status": "failed"})
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
 
 
 class ProfileSerializer(serializers.Serializer):
@@ -149,15 +145,7 @@ class UpdateProfileSerializer(serializers.Serializer):
 
 
 class SendOTPSerializer(BaseSerializer):
-    email = serializers.EmailField(validators=[validate_email_format])
-
-    def send_otp(self, user, otp):
-        subject = 'OTP for Email Verification'
-        message = f'Your OTP for email verification is: {otp}'
-        from_email = 'adedolapovictoria927@gmail.com'
-        recipient_list = [user.email]
-
-        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+    email = serializers.EmailField(required=True, validators=[validate_email_format])
 
     def create(self, validated_data):
         email = validated_data['email']
@@ -174,8 +162,6 @@ class SendOTPSerializer(BaseSerializer):
 
         user.totpdevice_set.create(secret_key=totp.secret)
 
-        self.send_otp(user, otp)
-
         return {'message': 'OTP sent successfully'}
 
 
@@ -190,26 +176,9 @@ class ResendOTPSerializer(BaseSerializer):
 
         send_mail(subject, message, from_email, recipient_list)
 
-    def create(self, validated_data):
-        email = validated_data['email']
-
-        try:
-            user = User.objects.get(email=email)
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError({'email': 'User not found.'})
-
-        user.totpdevice_set.all().delete()
-
-        totp = pyotp.TOTP(pyotp.random_base32())
-        otp = totp.now()
-
-        user.totpdevice_set.create(secret_key=totp.secret)
-
-        self.send_otp(user, otp)
-
         return {'message': 'OTP resent successfully'}
 
 
-
-
-
+class VerificationSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=6)
+    otp = serializers.CharField(max_length=6, required=True)
