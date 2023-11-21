@@ -1,19 +1,27 @@
 import string
+import random
 from django.db import IntegrityError
 from django.contrib.auth import authenticate
-from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from pyotp import random
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer, TokenBlacklistSerializer
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenBlacklistView
+)
+from rest_framework_simplejwt.serializers import (
+    TokenObtainPairSerializer,
+    TokenRefreshSerializer,
+    TokenBlacklistSerializer
+)
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
-from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User, Profile
+from rest_framework import status
+from .emails import send_mail, send_otp_email
+from .models import OTP, User, Profile
+from .otp_utils import get_or_generate_otp_secret, generate_otp
 from .serializers import (
     RegisterSerializer,
     ResendOTPSerializer,
@@ -27,7 +35,6 @@ from .serializers import (
     LoginSerializer,
     SendOTPSerializer
 )
-from django.http import JsonResponse
 
 
 def custom_response(data, message, status_code, status_text=None, tokens=None):
@@ -147,20 +154,6 @@ class ProfileView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ChangeEmailView(APIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = ChangeEmailSerializer
-
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = request.user.email
-        code = serializer.validated_data['code']
-        new_email = serializer.validated_data['email']
-
-
-
-
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -168,19 +161,16 @@ class ChangePasswordView(APIView):
         try:
             serializer = ChangePasswordSerializer(data=request.data)
             if serializer.is_valid():
-                # Your logic for changing password
                 return custom_response(None, 'Password changed successfully', status.HTTP_200_OK, 'success')
 
-            return custom_response(serializer.errors, 'Invalid data provided', status.HTTP_400_BAD_REQUEST,
-                                   'bad request')
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             data = {
                 "error_message": f"An error occurred while changing password: {str(e)}",
             }
-            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, 'error')
+            return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# Your existing RequestEmailChangeCodeView...
 class RequestEmailChangeCodeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -191,20 +181,13 @@ class RequestEmailChangeCodeView(APIView):
                 user = request.user
                 new_email = serializer.validated_data['email']
 
-                # Generate a random 6-digit code
-                email_change_code = ''.join(random.choices(string.digits, k=6))
+                otp_secret = get_or_generate_otp_secret(user)
+                otp = generate_otp(otp_secret.secret)
 
-                # Save the code to the user model
-                user.email_change_code = email_change_code
+                user.email_change_code = otp
                 user.save()
 
-                # Send the code to the user's email
-                subject = 'Email Change Verification Code'
-                message = f'Your verification code is: {email_change_code}'
-                from_email = 'your@example.com'  # Set your sending email address
-                recipient_list = [new_email]
-
-                send_mail(subject, message, from_email, recipient_list)
+                send_otp_email(user, email=new_email, template='email_change_verification_template.html')
 
                 return Response({'message': 'Email change code sent successfully'}, status=status.HTTP_200_OK)
 
@@ -215,7 +198,7 @@ class RequestEmailChangeCodeView(APIView):
             }
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# Your existing ResendEmailVerificationView...
+
 class ResendEmailVerificationView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -225,20 +208,16 @@ class ResendEmailVerificationView(APIView):
             if serializer.is_valid():
                 user = request.user
 
-                # Generate a new verification token
                 new_verification_token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
 
-                # Update the user's verification token in the database
                 user.profile.verification_token = new_verification_token
                 user.profile.save()
 
-                # Send the verification email to the user
                 subject = 'Email Verification'
                 context = {'user': user, 'verification_token': new_verification_token}
-                from django.template.loader import render_to_string
                 message = render_to_string('email_verification_template.html', context)
                 plain_message = strip_tags(message)
-                from_email = 'your@example.com'  # Set your sending email address
+                from_email = 'your@example.com'
                 recipient_list = [user.email]
 
                 send_mail(subject, plain_message, from_email, recipient_list, html_message=message)
@@ -252,16 +231,14 @@ class ResendEmailVerificationView(APIView):
             }
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# Your existing SendOTPSerializerView...
-class SendOTPSerializerView(APIView):
+class SendOTPView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
             serializer = SendOTPSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save()  # This will trigger the logic in SendOTPSerializer
-
+                serializer.save()
                 return Response({'message': 'OTP sent successfully'}, status=status.HTTP_200_OK)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -271,7 +248,8 @@ class SendOTPSerializerView(APIView):
             }
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# Your existing ResendOTPSerializerView...
+
+
 class ResendOTPSerializerView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -290,7 +268,35 @@ class ResendOTPSerializerView(APIView):
             }
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# Your existing RequestNewPasswordCodeView...
+class ChangeEmailView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ChangeEmailSerializer
+
+    def post(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                user = request.user
+                new_email = serializer.validated_data['email']
+
+                otp_secret = get_or_generate_otp_secret(user)
+                otp = generate_otp(otp_secret.secret)
+
+                user.email_change_code = otp
+                user.save()
+
+                send_otp_email(user, email=new_email, template='email_change_verification.html')
+
+                return Response({'message': 'Email change code sent successfully'}, status=status.HTTP_200_OK)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while changing email: {str(e)}",
+            }
+            return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class RequestNewPasswordCodeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -300,10 +306,11 @@ class RequestNewPasswordCodeView(APIView):
             if serializer.is_valid():
                 email = serializer.validated_data['email']
 
-                # Call your existing logic for sending a new password code
                 send_otp_serializer = SendOTPSerializer(data={'email': email})
                 if send_otp_serializer.is_valid():
-                    send_otp_serializer.save()  # This will trigger the logic in SendOTPSerializer
+                    send_otp_serializer.save()
+
+                    send_otp_email(send_otp_serializer.instance.user, email=email, template='new_password_code_template.html')
 
                     return Response({'message': 'New password code sent successfully'}, status=status.HTTP_200_OK)
                 else:
@@ -315,4 +322,3 @@ class RequestNewPasswordCodeView(APIView):
                 "error_message": f"An error occurred while requesting new password code: {str(e)}",
             }
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
