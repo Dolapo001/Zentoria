@@ -1,11 +1,13 @@
+import re
+
 from rest_framework import serializers
-from .models import Profile, User
+from .models import Profile, User, OTP
 from .validators import (
     validate_code, validate_email_format, validate_phone_number, validate_image_size
 )
 import pyotp
 from django.core.mail import send_mail
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 
 class BaseSerializer(serializers.Serializer):
@@ -155,14 +157,19 @@ class SendOTPSerializer(BaseSerializer):
         except ObjectDoesNotExist:
             raise serializers.ValidationError({'email': 'User not found'})
 
-        user.totpdevice_set.all().delete()
+        try:
+            otp_instance = OTP.objects.get(user=user)
+            otp_instance.delete()
+        except OTP.DoesNotExist:
+            pass
 
         totp = pyotp.TOTP(pyotp.random_base32())
         otp = totp.now()
 
-        user.totpdevice_set.create(secret_key=totp.secret)
+        OTP.objects.create(user=user, secret=totp.secret)
 
         return {'message': 'OTP sent successfully'}
+
 
 
 class ResendOTPSerializer(BaseSerializer):
@@ -179,6 +186,23 @@ class ResendOTPSerializer(BaseSerializer):
         return {'message': 'OTP resent successfully'}
 
 
-class VerificationSerializer(serializers.Serializer):
-    code = serializers.CharField(max_length=6)
-    otp = serializers.CharField(max_length=6, required=True)
+class VerifySerializer(serializers.Serializer):
+    code = serializers.IntegerField()
+    email = serializers.EmailField()
+
+    def validate(self, attrs):
+        code = attrs.get('code')
+        email = attrs.get('email')
+
+        if not code:
+            raise serializers.ValidationError({"message": "Code is required", "status": "failed"})
+
+        if not re.match("^[0-9]{4}$", str(code)):
+            raise serializers.ValidationError({"message": "Code must be a 4-digit number", "status": "failed"})
+
+        try:
+            validate_email_format(email)
+        except ValidationError:
+            raise serializers.ValidationError({"message": "Invalid email format", "status": "failed"})
+
+        return attrs

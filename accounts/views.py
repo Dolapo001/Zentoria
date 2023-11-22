@@ -29,7 +29,7 @@ from .otp_utils import get_or_generate_otp_secret, generate_otp, validate_otp
 from .serializers import (
     RegisterSerializer,
     ResendOTPSerializer,
-    VerificationSerializer,
+    VerifySerializer,
     ResendEmailVerificationSerializer,
     ProfileSerializer,
     ChangeEmailSerializer,
@@ -183,6 +183,7 @@ class ChangePasswordView(APIView):
 
 class RequestEmailChangeCodeView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = RequestEmailChangeCodeSerializer
 
     def post(self, request):
         try:
@@ -197,7 +198,7 @@ class RequestEmailChangeCodeView(APIView):
                 user.email_change_code = otp
                 user.save()
 
-                send_otp_email(user, email=new_email, template='email_change_verification_template.html')
+                send_otp_email(user, email=new_email, template='email_change_verification.html')
 
                 return Response({'message': 'Email change code sent successfully'}, status=status.HTTP_200_OK)
 
@@ -211,6 +212,7 @@ class RequestEmailChangeCodeView(APIView):
 
 class ResendEmailVerificationView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = ResendEmailVerificationSerializer
 
     def post(self, request):
         try:
@@ -225,7 +227,7 @@ class ResendEmailVerificationView(APIView):
 
                 subject = 'Email Verification'
                 context = {'user': user, 'verification_token': new_verification_token}
-                message = render_to_string('email_verification_template.html', context)
+                message = render_to_string('email_verification.html', context)
                 plain_message = strip_tags(message)
                 from_email = 'your@example.com'
                 recipient_list = [user.email]
@@ -243,6 +245,7 @@ class ResendEmailVerificationView(APIView):
 
 class SendOTPView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = SendOTPSerializer
 
     def post(self, request):
         try:
@@ -260,15 +263,15 @@ class SendOTPView(APIView):
 
 
 
-class ResendOTPSerializerView(APIView):
+class ResendOTPView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = ResendOTPSerializer
 
     def post(self, request):
         try:
             serializer = ResendOTPSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save()  # This will trigger the logic in ResendOTPSerializer
-
+                serializer.save()
                 return Response({'message': 'OTP resent successfully'}, status=status.HTTP_200_OK)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -322,24 +325,34 @@ class ChangeEmailView(APIView):
             return custom_response(data, status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
 
-class AccountVerificationView(APIView):
-    permission_classes = [IsAuthenticated]
+class VerificationView(APIView):
+    serializer_class = VerifySerializer
 
     def post(self, request):
         try:
-            serializer = VerificationSerializer(data=request.data)
+            serializer = VerifySerializer(data=request.data)
             if serializer.is_valid():
                 user = request.user
-                verification_code = serializer.validated_data['verification_code']
-                otp = serializer.validated_data['otp']
+                email = user.email
+                verification_code = serializer.validated_data['code']
 
-                if user.profile.verification_code == verification_code and validate_otp(user, otp):
-                    user.profile.is_verified = True
-                    user.profile.save()
+                if user.email == email and user.profile.verification_code == verification_code:
 
-                    return Response({'message': 'Account successfully verified'}, status=status.HTTP_200_OK)
+                    current_time = timezone.now()
+                    expiration_time = user.profile.otp_created + timedelta(minutes=10)
+
+                    if current_time > expiration_time:
+                        return Response({'error': 'OTP has expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+                    if validate_otp(user, serializer.validated_data['code']):
+                        user.profile.is_verified = True
+                        user.profile.save()
+
+                        return Response({'message': 'Account successfully verified'}, status=status.HTTP_200_OK)
+                    else:
+                        return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    return Response({'error': 'Invalid verification code or OTP'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'error': 'Invalid verification code'}, status=status.HTTP_400_BAD_REQUEST)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:

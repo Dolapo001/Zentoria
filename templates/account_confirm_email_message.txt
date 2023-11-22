@@ -1,3 +1,0 @@
-Please click the link below to confirm your email address:
-
-{{ protocol }}://{{ domain }}{% url 'account_confirm_email' key=confirmation_key %}

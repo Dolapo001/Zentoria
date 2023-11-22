@@ -50,6 +50,8 @@ class Profile(models.Model):
     username = models.CharField(max_length=30, unique=True, default='')
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     address = models.CharField(max_length=255, blank=True)
+    is_verified = models.BooleanField(default=False)
+    verification_code = models.CharField(max_length=6, blank=True, null=True)
 
     def __str__(self):
         return self.user.username
