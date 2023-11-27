@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     #local_apps
     'Products.apps.ProductsConfig',
     'accounts.apps.AccountsConfig',
+    'store.apps.StoreConfig',
 ]
 
 
