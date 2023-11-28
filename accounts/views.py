@@ -3,7 +3,7 @@ import random
 from django.utils import timezone
 from datetime import timedelta
 import pyotp
-from .utils import RequestError, ErrorCode, Response, CustomResponse
+from .utils import RequestError, ErrorCode, CustomResponse
 from django.db import IntegrityError
 from django.contrib.auth import authenticate
 from django.template.loader import render_to_string
@@ -20,6 +20,7 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
     TokenBlacklistSerializer
 )
+from utils import custom_response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -35,28 +36,9 @@ from .serializers import (
     ChangeEmailSerializer,
     ChangePasswordSerializer,
     RequestEmailChangeCodeSerializer,
-    RequestNewPasswordCodeSerializer,
     LoginSerializer,
     SendOTPSerializer
 )
-
-
-def custom_response(data, message, status_code, status_text=None, tokens=None):
-    status_code = int(status_code)
-
-    response_data = {
-        "status_code": status_code,
-        "message": message,
-        "data": data,
-    }
-
-    if status_text is not None:
-        response_data["status"] = status_text
-
-    if tokens is not None:
-        response_data["tokens"] = tokens
-
-    return Response(response_data, status=status_code)
 
 
 class UserRegistrationView(APIView):

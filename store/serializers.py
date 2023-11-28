@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Order, Cart, OrderItem, CartItem, Payment, ShippingAddress
 from Products.models import Product
-from .validator import validate_quantity, validate_cart_item_set, validate_total_quantity, validate_product
+from .validator import validate_quantity, validate_cartitem_set, validate_total_quantity, validate_product
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -14,13 +14,13 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class CartSerializer(serializers.ModelSerializer):
-    cart_item_set = CartItemSerializer(many=True, read_only=True)
+    cartitem_set = CartItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Cart
         fields = ['id', 'user', 'created_at', 'cartitem_set']
 
-    cart_item_set = serializers.ListField(child=CartItemSerializer(validators=[validate_cart_item_set]))
+    cartitem_set = serializers.ListField(child=CartItemSerializer(validators=[validate_cartitem_set]))
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     def validate_cartitem_set(self, value):

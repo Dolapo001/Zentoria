@@ -13,7 +13,7 @@ def validate_product(value):
     return value
 
 
-def validate_cart_item_set(value):
+def validate_cartitem_set(value):
     if not value:
         raise serializers.ValidationError("The cart must have at least one item.")
     return value
@@ -26,3 +26,5 @@ def validate_total_quantity(value):
         raise serializers.ValidationError("The total quantity in the cart must be greater than zero.")
 
     return value
+
+

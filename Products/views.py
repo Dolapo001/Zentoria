@@ -1,4 +1,5 @@
 from rest_framework import status
+from utils import custom_response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -8,18 +9,6 @@ from .serializers import (
     SizeSerializer, ProductReviewSerializer
 )
 from .permissions import IsAuthorOrReadOnly
-
-# Create your views here.
-
-
-def custom_response(data, message, status_code, status_text):
-    response_data = {
-        "status_code": status_code,
-        "message": message,
-        "data": data,
-        "status": status_text,
-    }
-    return Response(response_data, status=status_code)
 
 
 class ProductListCategory(APIView):
@@ -123,9 +112,9 @@ class ProductDetail(APIView):
                 "message": "Product details",
                 "data": {
                     "product": serializer.data,
-                    "colors": color_serializer.data,  # Display types of colors, not color count
+                    "colors": color_serializer.data,
                     "sizes": size_serializer.data,
-                    "reviews": product_review_serializer.data,  # Display the list of reviews
+                    "reviews": product_review_serializer.data,
                     "average_rating": average_rating,
                 },
             }
