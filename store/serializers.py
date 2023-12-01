@@ -45,13 +45,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'order', 'product', 'quantity']
 
 
-class PaymentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Payment
-        fields = ['id', 'order', 'amount', 'payment_method', 'transaction_id', 'payment_status']
-
-
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingAddress
-        fields = ['id', 'order', 'address', 'city', 'state']
+        fields = ['id', 'user', 'order', 'street', 'city', 'state', 'zip_code']
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['id', 'user', 'order', 'amount', 'payment_method']

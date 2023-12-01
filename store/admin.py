@@ -1,11 +1,21 @@
 from django.contrib import admin
 from .models import Cart, CartItem, Payment, Order, OrderItem, ShippingAddress
 
-
 # Register your models here.
+
 
 class CartItemInline(admin.TabularInline):
     model = CartItem
+    extra = 1
+
+
+class PaymentInline(admin.StackedInline):
+    model = Payment
+    extra = 1
+
+
+class ShippingAddressInline(admin.StackedInline):
+    model = ShippingAddress
     extra = 1
 
 
@@ -38,7 +48,7 @@ admin.site.register(Payment, PaymentAdmin)
 
 
 class AddressAdmin(admin.ModelAdmin):
-    list_display = ('order', 'address', 'city', 'state')
+    list_display = ('order', 'street', 'city', 'state', 'zip_code')
 
 
 admin.site.register(ShippingAddress, AddressAdmin)

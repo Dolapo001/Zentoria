@@ -10,7 +10,9 @@ from .views import (
     OrderView,
     OrderItemView,
     PaymentView,
-    AddressView
+    AddressView,
+    AddressDetailView,
+    PaymentDetailView
 )
 
 urlpatterns = [
@@ -20,18 +22,12 @@ urlpatterns = [
     path('cart-items/<int:cart_item_id>/', CartItemView.as_view(), name='cart-item-detail'),
 
     path('orders/', OrderListView.as_view(), name='order-list'),
-    path('order-items/', OrderItemList.as_view(), name='order-item-list'),
     path('orders/<int:order_id>/', OrderView.as_view(), name='order-detail'),
+    path('order-items/', OrderItemList.as_view(), name='order-item-list'),
     path('order-items/<int:order_item_id>/', OrderItemView.as_view(), name='order-item-detail'),
 
-    path('payments/<uuid:payment_id>/', PaymentView.as_view(), name='payment-detail'),
-    path('payments/', PaymentView.as_view(), name='payment-create'),
-    path('payments/<uuid:payment_id>/', PaymentView.as_view(), name='payment-update'),
-    path('payments/<uuid:payment_id>/', PaymentView.as_view(), name='payment-cancel'),
-
-    path('addresses/<uuid:address_id>/', AddressView.as_view(), name='address-detail'),
-    path('addresses/', AddressView.as_view(), name='address-create'),
-    path('addresses/<uuid:address_id>/', AddressView.as_view(), name='address-update'),
-    path('addresses/<uuid:address_id>/delete/', AddressView.as_view(), name='address-delete'),
-
+    path('payments/', PaymentView.as_view(), name='payment-list'),
+    path('payments/<int:payment_id>/', PaymentDetailView.as_view(), name='payment-detail'),
+    path('addresses/', AddressView.as_view(), name='address-list'),
+    path('addresses/<int:address_id>/', AddressDetailView.as_view(), name='address-detail'),
 ]

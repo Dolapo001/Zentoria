@@ -1,8 +1,10 @@
 from uuid import uuid4
+from django.contrib.auth.models import User
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from .validators import validate_date
+
 
 class CustomUserManager(BaseUserManager):
 
