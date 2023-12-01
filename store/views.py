@@ -2,7 +2,6 @@ from utils import custom_response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework.response import Response
 from .models import Cart, CartItem, Order, OrderItem, Payment, ShippingAddress
 from .serializers import CartSerializer, CartItemSerializer, OrderSerializer, OrderItemSerializer, \
     OrderCreateSerializer, PaymentSerializer, AddressSerializer
@@ -123,9 +122,9 @@ class CartView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
 
-class CartItemView:
+class CartItemView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer = CartItemSerializer
+    serializer_class = CartItemSerializer
 
     def get(self, request, cart_item_id):
         try:
@@ -134,7 +133,7 @@ class CartItemView:
 
             return custom_response(serializer.data, "cartItem retrieved successfully", status.HTTP_201_CREATED, "success")
 
-        except Cart.DoesNotExist:
+        except CartItem.DoesNotExist:
             return custom_response({}, "CartItem not found", status.HTTP_404_NOT_FOUND, "error")
 
         except Exception as e:
@@ -326,7 +325,148 @@ class OrderItemView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def put(self, request, order_item_id):
+        try:
+            order_item = OrderItem.objects.get(id=order_item_id, order__user=request.user)
+            serializer = OrderItemSerializer(order_item, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+
+                order = order_item.order
+                order_total = order.calculate_order_total()
+                order.payment.amount = order_total
+                order.payment.save()
+                return custom_response(serializer.data, "OrderItem updated successfully", status.HTTP_200_OK, "success")
+        except OrderItem.DoesNotExist:
+            return custom_response({}, "OrderItem not found", status.HTTP_404_NOT_FOUND, "error")
+
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while updating OrderItem: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
 
+class PaymentView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_classes = PaymentSerializer
+
+    def get(self, request, payment_id):
+        try:
+            payment = Payment.objects.get(id=payment_id, order__user=request.user)
+            serializer = PaymentSerializer(payment)
+            return custom_response(serializer.data, "Payment details retrieved successfully", status.HTTP_200_OK, "success")
+        except Payment.DoesNotExist:
+            return custom_response({}, "Payment not found", status.HTTP_404_NOT_FOUND, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while retrieving payment details: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def post(self, request):
+        try:
+            serializer = PaymentSerializer(data=request.data)
+            if serializer.is_valid():
+                order_id = serializer.validated_data['order'].id
+                order = Order.objects.get(id=order_id, user=request.user)
+                payment = serializer.save(order=order)
+                return custom_response(serializer.data, "Payment created successfully", status.HTTP_201_CREATED, "success")
+            return custom_response(serializer.errors, "Invalid data", status.HTTP_400_BAD_REQUEST, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while creating payment: {str(e)}",
+            }
+        return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def put(self, request, payment_id):
+        try:
+            payment = Payment.objects.get(id=payment_id, order__user=request.user)
+            serializer = PaymentSerializer(payment, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return custom_response(serializer.data, "Payment updated successfully", status.HTTP_200_OK, "success")
+            return custom_response(serializer.errors, "Invalid data", status.HTTP_400_BAD_REQUEST, "error")
+        except Payment.DoesNotExist:
+            return custom_response({}, "Payment not found", status.HTTP_404_NOT_FOUND, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while updating payment: {str(e)}",
+            }
+        return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def delete(self, request, payment_id):
+        try:
+            payment = Payment.objects.get(id=payment_id, order__user=request.user)
+            payment.delete()
+            return custom_response({}, "Payment canceled successfully", status.HTTP_204_NO_CONTENT, "success")
+        except Payment.DoesNotExist:
+            return custom_response({}, "Payment not found", status.HTTP_404_NOT_FOUND, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while deleting payment: {str(e)}",
+            }
+        return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
 
+class AddressView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_classes = AddressSerializer
+
+    def get(self, request, address_id):
+        try:
+            address = ShippingAddress.objects.get(id=address_id, order__user=request.user)
+            serializer = AddressSerializer(address)
+            return custom_response(serializer.data, "Shipping address details retrieved succeesfully", status.HTTP_200_OK, "success")
+        except ShippingAddress.DoesNotExist:
+            return custom_response({}, "Shipping address not found", status.HTTP_404_NOT_FOUND, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while retrieving address: {str(e)}",
+            }
+        return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def post(self, request):
+        try:
+            serializer = AddressSerializer(data=request.data)
+            if serializer.is_valid():
+                order_id = serializer.validated_data['order'].id
+                order = Order.objects.get(id=order_id, user=request.user)
+                address = serializer.save(order=order)
+                return custom_response(serializer.data, "Shipping address created successfully",
+                                       status.HTTP_201_CREATED, "success")
+            return custom_response(serializer.errors, "Invalid data", status.HTTP_400_BAD_REQUEST, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while creating shipping address: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def put(self, request, address_id):
+        try:
+            address = ShippingAddress.objects.get(id=address_id, order__user=request.user)
+            serializer = AddressSerializer(address, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return custom_response(serializer.data, "Shipping address updated successfully", status.HTTP_200_OK,
+                                       "success")
+            return custom_response(serializer.errors, "Invalid data", status.HTTP_400_BAD_REQUEST, "error")
+        except ShippingAddress.DoesNotExist:
+            return custom_response({}, "Shipping address not found", status.HTTP_404_NOT_FOUND, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while updating shipping address: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+    def delete(self, request, address_id):
+        try:
+            address = ShippingAddress.objects.get(id=address_id, order__user=request.user)
+            address.delete()
+            return custom_response({}, "Shipping address removed successfully", status.HTTP_204_NO_CONTENT, "success")
+        except ShippingAddress.DoesNotExist:
+            return custom_response({}, "Shipping address not found", status.HTTP_404_NOT_FOUND, "error")
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while deleting shipping address: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
