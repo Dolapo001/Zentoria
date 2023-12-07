@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Cart, CartItem, Payment, Order, OrderItem, ShippingAddress
+from .models import Cart, CartItem, Payment, Order, OrderItem, ShippingAddress, Coupon, Offer, Feed, Notification, \
+    FlashSale
 
 # Register your models here.
 
@@ -53,3 +54,46 @@ class AddressAdmin(admin.ModelAdmin):
 
 admin.site.register(ShippingAddress, AddressAdmin)
 
+
+class CouponAdmin(admin.ModelAdmin):
+    list_display = ('code', 'discount_percentage', 'valid_from', 'valid_to', 'is_valid')
+    search_fields = ('code',)
+    list_filter = ('valid_from', 'valid_to')
+
+
+admin.site.register(Coupon, CouponAdmin)
+
+
+class OfferAdmin(admin.ModelAdmin):
+    list_display = ('title', 'discount_percentage')
+    filter_horizontal = ('products',)
+
+
+admin.site.register(Offer, OfferAdmin)
+
+
+class FeedAdmin(admin.ModelAdmin):
+    list_display = ('title', 'content', 'created_at')
+    search_fields = ('title',)
+
+
+admin.site.register(Feed, FeedAdmin)
+
+
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'content', 'created_at', 'is_read')
+    search_fields = ('user__username', 'content')
+    list_filter = ('created_at', 'is_read')
+
+
+admin.site.register(Notification, NotificationAdmin)
+
+
+class FlashSaleAdmin(admin.ModelAdmin):
+    list_display = ('title', 'start_time', 'end_time', 'discount_percentage', 'is_active')
+    filter_horizontal = ('products',)
+    search_fields = ('title',)
+    list_filter = ('start_time', 'end_time')
+
+
+admin.site.register(FlashSale, FlashSaleAdmin)

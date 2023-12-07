@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+
 from accounts.models import User
 from Products.models import Product
 
@@ -95,3 +97,66 @@ class ShippingAddress(models.Model):
 
     def __str__(self):
         return f"ShippingAddress for Order {self.order.id}"
+
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+
+    def is_valid(self):
+        now = timezone.now()
+        return self.valid_from <= now <= self.valid_to
+
+    def __str__(self):
+        return f"Coupon {self.code}"
+
+
+class Offer(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    products = models.ManyToManyField(Product)
+
+    def __str__(self):
+        return self.title
+
+
+class Feed(models.Model):
+    title = models.CharField(max_length=225)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Notification for {self.user.username}"
+
+
+class FlashSale(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    products = models.ManyToManyField(Product)
+
+    def is_active(self):
+        now = timezone.now()
+        return self.start_time <= now <= self.end_time
+
+    def __str__(self):
+        return self.title
+
+
+
+
