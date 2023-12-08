@@ -1,10 +1,18 @@
 from utils import custom_response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
 from rest_framework.views import APIView
+from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from .models import Cart, CartItem, Order, OrderItem, Payment, ShippingAddress
 from .serializers import CartSerializer, CartItemSerializer, OrderSerializer, OrderItemSerializer, \
     PaymentSerializer, AddressSerializer
+
+
+class IsOrderOwner(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user
 
 
 class CartListView(APIView):
@@ -59,17 +67,20 @@ class CartItemListView(APIView):
 
 class CartView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = CartSerializer
+    serializer_classes = CartSerializer
+
+    def get_cart_details(self, cart):
+        serializer = CartSerializer(cart)
+        item_details = CartItemSerializer(cart.cartitem_set.all(), many=True)
+        serializer.data["item_details"] = item_details.data
+        return serializer.data
 
     def get(self, request, cart_id):
         try:
             cart = Cart.objects.get(id=cart_id)
-            serializer = CartSerializer(cart)
+            data = self.get_cart_details(cart)
 
-            item_details = CartItemSerializer(cart.cartitem_set.all(), many=True)
-            serializer.data["item_details"] = item_details
-
-            return custom_response(serializer.data, "cart retrieved successfully", status.HTTP_201_CREATED, "success")
+            return custom_response(data, "cart retrieved successfully", status.HTTP_201_CREATED, "success")
 
         except Cart.DoesNotExist:
             return custom_response({}, "Cart not found", status.HTTP_404_NOT_FOUND, "error")
@@ -125,7 +136,7 @@ class CartView(APIView):
 
 class CartItemView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = CartItemSerializer
+    serializer_classes = CartItemSerializer
 
     def get(self, request, cart_item_id):
         try:
@@ -173,29 +184,29 @@ class OrderListView(APIView):
     permission_classes = [IsAuthenticated | IsAdminUser]
     serializer_classes = OrderSerializer
 
-    def get(self, request):
+    class OrderListPagination(PageNumberPagination):
+        page_size = 8
+    pagination_class = OrderListPagination
+
+    @action(detail=False, methods=['get'])
+    def get_orders(self, request):
         try:
             if not request.user.is_staff:
                 orders = Order.objects.filter(user=request.user)
             else:
                 orders = Order.objects.all()
 
+            page = self.paginate_queryset(orders)
+            if page is not None:
+                serializer = OrderSerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
             serializer = OrderSerializer(orders, many=True)
-
-            for order_data in serializer.data:
-                order_id = order_data['id']
-                order_items = OrderItem.objects.filter(order=order_id)
-                order_item_serializer = OrderItemSerializer(order_items, many=True)
-                order_data['item_details'] = order_item_serializer.data
-
-            return custom_response(serializer.data, "Order details retrieved successfully",
-                                   status.HTTP_200_OK, "success")
+            return custom_response(serializer.data, status.HTTP_200_OK, 'success')
         except Order.DoesNotExist:
             return custom_response({}, "Orders not found", status.HTTP_404_NOT_FOUND, "error")
         except Exception as e:
-            data = {
-                "error_message": f"An error occurred while retrieving Order List: {str(e)}",
-            }
+            data = {"error_message": f"An error occurred while retrieving Order List: {str(e)}"}
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def post(self, request):
@@ -257,23 +268,25 @@ class OrderItemList(APIView):
 
 
 class OrderView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOrderOwner]
     serializer_classes = OrderSerializer
+
+    def get_order_details(self, order):
+        serializer = OrderSerializer(order)
+        item_details = OrderItemSerializer(order.orderitem_set.all(), many=True)
+        serializer.data["item_details"] = item_details.data
+        return serializer.data
 
     def get(self, request, order_id):
         try:
             order = Order.objects.get(id=order_id, user=request.user)
-            serializer = OrderSerializer(order)
-
-            item_details = OrderItemSerializer(order.orderitem_set.all(), many=True)
-            serializer.data["item_details"] = item_details
-
-            return custom_response(serializer.data, "Order retrieved successfully", status.HTTP_200_OK, "success")
+            data = self.get_order_details(order)
+            return custom_response(data, "Order retrieved successfully", status.HTTP_200_OK, "success")
         except Order.DoesNotExist:
             return custom_response({}, "Order not found", status.HTTP_404_NOT_FOUND, "error")
         except Exception as e:
             data = {
-                "error _message": f"An error occurred while retrieving order: {str(e)}",
+                "error_message": f"An error occurred while retrieving order: {str(e)}",
             }
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
@@ -313,7 +326,7 @@ class OrderView(APIView):
 
 
 class OrderItemView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOrderOwner]
     serializer_classes = OrderItemSerializer
 
     def get(self, request, order_item_id):
@@ -374,7 +387,7 @@ class PaymentView(APIView):
 
 class PaymentDetailView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = PaymentSerializer
+    serializer_classes = PaymentSerializer
 
     def get(self, request, payment_id):
         try:
@@ -422,7 +435,7 @@ class PaymentDetailView(APIView):
 
 class AddressDetailView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = AddressSerializer
+    serializer_classes = AddressSerializer
 
     def get(self, request, address_id):
         try:
@@ -471,7 +484,7 @@ class AddressDetailView(APIView):
 
 class AddressView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = AddressSerializer
+    serializer_classes = AddressSerializer
 
     def post(self, request):
         try:
@@ -486,5 +499,42 @@ class AddressView(APIView):
         except Exception as e:
             data = {
                 "error_message": f"An error occurred while creating shipping address: {str(e)}",
+            }
+            return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
+class CheckoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+
+            cart = Cart.objects.get(user=request.user)
+
+            order_serializer = OrderSerializer(data={'user': request.user.id, 'cart': cart.id})
+            if order_serializer.is_valid():
+                order = order_serializer.save()
+
+                payment_serializer = PaymentSerializer(data={'order': order.id, 'amount': cart.calculate_total()})
+                if payment_serializer.is_valid():
+                    payment_serializer.save()
+                else:
+                    order.delete()
+                    return custom_response(payment_serializer.errors, "Payment failed", status.HTTP_400_BAD_REQUEST,
+                                           "error")
+
+                for cart_item in cart.cartitem_set.all():
+                    product = cart_item.product
+                    product.quantity -= cart_item.quantity
+                    product.save()
+
+                return Response({"message": "Checkout successful", "order_id": order.id}, status.HTTP_200_OK)
+            else:
+                return custom_response(order_serializer.errors, "Order creation failed", status.HTTP_400_BAD_REQUEST,
+                                       "error")
+
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred during checkout: {str(e)}",
             }
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")

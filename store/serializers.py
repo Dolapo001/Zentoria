@@ -1,7 +1,17 @@
 from rest_framework import serializers
-from .models import Order, Cart, OrderItem, CartItem, Payment, ShippingAddress
+from .models import Order, \
+    Cart, OrderItem, \
+    CartItem, Payment, \
+    ShippingAddress, Coupon, Offer, \
+    Feed, Notification, FlashSale
 from Products.models import Product
-from .validator import validate_quantity, validate_cartitem_set, validate_total_quantity, validate_product
+from .validator import validate_quantity, \
+    validate_cartitem_set, \
+    validate_total_quantity, \
+    validate_product, \
+    validate_coupon_dates, \
+    validate_discount_percentage, \
+    validate_flash_sale_dates
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -55,3 +65,44 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ['id', 'user', 'order', 'amount', 'payment_method']
+
+
+class FeedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Feed
+        fields = '__all__'
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
+
+
+class CouponSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Coupon
+        fields = '__all__'
+
+    def validate(self, data):
+        validate_coupon_dates(data.get('valid_from'), data.get('valid_to'))
+        return data
+
+
+class OfferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Offer
+        fields = '__all__'
+
+    def validate_discount_percentage(self, value):
+        return validate_discount_percentage(value)
+
+
+class FlashSaleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FlashSale
+        fields = '__all__'
+
+    def validate(self, data):
+        validate_flash_sale_dates(data.get('start_time'), data.get('end_time'))
+        return data
