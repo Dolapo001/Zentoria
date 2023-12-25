@@ -1,8 +1,9 @@
 asgiref==3.7.2
-Django==4.2.6
+Django~=4.2.7
 Pillow==10.1.0
 sqlparse==0.4.4
 djangorestframework~=3.14.0
 python-dotenv~=1.0.0
 pyotp~=2.9.0
 djangorestframework-simplejwt
+requests~=2.31.0

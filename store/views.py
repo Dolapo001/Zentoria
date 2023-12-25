@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermiss
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from .payment import initiate_payment
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from .models import Cart, CartItem, Order, OrderItem, Payment, ShippingAddress, CouponCode
@@ -366,7 +367,7 @@ class OrderItemView(APIView):
 
 class PaymentView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_classes = PaymentSerializer
+    serializer_class = PaymentSerializer  # Fix typo: 'serializer_classes' to 'serializer_class'
 
     def post(self, request):
         try:
@@ -375,8 +376,19 @@ class PaymentView(APIView):
                 order_id = serializer.validated_data['order'].id
                 order = Order.objects.get(id=order_id, user=request.user)
                 serializer.save(order=order)
-                return custom_response(serializer.data, "Payment created successfully",
-                                       status.HTTP_201_CREATED, "success")
+
+                amount = serializer.validated_data['amount']
+                email = serializer.validated_data['user'].email
+                redirect_url = "https://your-redirect-url.com"
+                flutterwave_response = initiate_payment(amount, email, redirect_url)
+
+                if 'status' in flutterwave_response and flutterwave_response['status'] == 'success':
+                    return custom_response(serializer.data, "Payment created successfully",
+                                           status.HTTP_201_CREATED, "success")
+                else:
+                    return custom_response(flutterwave_response, "Failed to initiate payment",
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
             return custom_response(serializer.errors, "Invalid data", status.HTTP_400_BAD_REQUEST, "error")
         except Exception as e:
             data = {

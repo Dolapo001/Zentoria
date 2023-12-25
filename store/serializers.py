@@ -61,7 +61,13 @@ class AddressSerializer(serializers.ModelSerializer):
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ['id', 'user', 'order', 'amount', 'payment_method']
+        fields = ['amount', 'order', 'user']
+
+    def validate_order(self, value):
+        user = self.context['request'].user
+        if value.user != user:
+            raise serializers.ValidationError("Order does not belong to the current user.")
+        return value
 
 
 class CouponCodeSerializer(serializers.ModelSerializer):
