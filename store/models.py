@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
-
+import secrets
+from django.core.exceptions import ValidationError
 from accounts.models import User
 from Products.models import Product
 
@@ -9,6 +10,7 @@ class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, default='active')
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
 
     def calculate_total(self):
         total_cost = sum(item.product.price * item.quantity for item in self.cartitem_set.all())
@@ -16,6 +18,21 @@ class Cart(models.Model):
 
     def total_quantity(self):
         return sum(item.quantity for item in self.cartitem_set.all())
+
+    def apply_coupon(self, coupon):
+        if not coupon.is_valid():
+            raise ValidationError("Cannot apply an invalid coupon.")
+
+        discount_amount = self.calculate_discount(coupon)
+
+        self.total -= discount_amount
+        self.save()
+
+    def calculate_discount(self, coupon):
+        discount_percentage = coupon.discount_percentage
+        total_amount = self.calculate_total()
+        discount_amount = (discount_percentage / 100) * total_amount
+        return discount_amount
 
     def __str__(self):
         return f"Cart {self.id} - User: {self.user.username}, Status: {self.status}"
@@ -73,7 +90,7 @@ class Payment(models.Model):
     ]
 
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='payment_relation')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)  # Update this line with an appropriate default user ID
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=225, choices=PAYMENT_METHOD_CHOICES)
     transaction_id = models.CharField(max_length=225)
@@ -99,63 +116,42 @@ class ShippingAddress(models.Model):
         return f"ShippingAddress for Order {self.order.id}"
 
 
-class Coupon(models.Model):
-    code = models.CharField(max_length=50, unique=True)
-    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
-    valid_from = models.DateTimeField()
-    valid_to = models.DateTimeField()
+class CouponCode(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+    code = models.CharField(max_length=8, unique=True, editable=False)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    expired = models.BooleanField(default=False)
+    expiry_date = models.DateTimeField()
+
+    def __str__(self):
+        return self.code
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = secrets.token_hex(4).upper()
+
+        if self.expiry_date and (timezone.now() > self.expiry_date):
+            self.expired = True
+
+        if self.expiry_date < timezone.now():
+            raise ValidationError("Expiry date must be in the future")
+        super().save(*args, **kwargs)
 
     def is_valid(self):
-        now = timezone.now()
-        return self.valid_from <= now <= self.valid_to
+        return not self.expired and self.expiry_date > timezone.now()
 
-    def __str__(self):
-        return f"Coupon {self.code}"
+    def extend_expiry(self, days):
+        if self.expiry_date > timezone.now():
+            self.expiry_date += timezone.timedelta(days=days)
+            self.expired = False
+            self.save()
 
-
-class Offer(models.Model):
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
-    products = models.ManyToManyField(Product)
-
-    def __str__(self):
-        return self.title
+    def deactivate(self):
+        self.expired = True
+        self.save()
 
 
-class Feed(models.Model):
-    title = models.CharField(max_length=225)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.title
-
-
-class Notification(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"Notification for {self.user.username}"
-
-
-class FlashSale(models.Model):
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
-    products = models.ManyToManyField(Product)
-
-    def is_active(self):
-        now = timezone.now()
-        return self.start_time <= now <= self.end_time
-
-    def __str__(self):
-        return self.title
 
 
 

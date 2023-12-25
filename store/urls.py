@@ -12,7 +12,9 @@ from .views import (
     PaymentView,
     AddressView,
     AddressDetailView,
-    PaymentDetailView
+    PaymentDetailView,
+    CheckoutView,
+    CouponCodeView
 )
 
 urlpatterns = [
@@ -30,4 +32,7 @@ urlpatterns = [
     path('payments/<int:payment_id>/', PaymentDetailView.as_view(), name='payment-detail'),
     path('addresses/', AddressView.as_view(), name='address-list'),
     path('addresses/<int:address_id>/', AddressDetailView.as_view(), name='address-detail'),
+
+    path('checkout/', CheckoutView.as_view(), name='checkout'),
+    path('coupons', CouponCodeView.as_view(), name='coupon-code')
 ]

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Cart, CartItem, Payment, Order, OrderItem, ShippingAddress, Coupon, Offer, Feed, Notification, \
-    FlashSale
+    FlashSale, CouponUsage
 
 # Register your models here.
 
@@ -97,3 +97,12 @@ class FlashSaleAdmin(admin.ModelAdmin):
 
 
 admin.site.register(FlashSale, FlashSaleAdmin)
+
+
+class CouponUsageAdmin(admin.ModelAdmin):
+    list_display = ('user', 'coupon', 'used_at')
+    search_fields = ('user__username', 'coupon__code')
+    date_hierarchy = 'used_at'
+
+
+admin.site.register(CouponUsage, CouponUsageAdmin)

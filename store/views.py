@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from .models import Cart, CartItem, Order, OrderItem, Payment, ShippingAddress
+from .models import Cart, CartItem, Order, OrderItem, Payment, ShippingAddress, CouponCode
 from .serializers import CartSerializer, CartItemSerializer, OrderSerializer, OrderItemSerializer, \
-    PaymentSerializer, AddressSerializer
+    PaymentSerializer, AddressSerializer, CouponCodeSerializer
 
 
 class IsOrderOwner(BasePermission):
@@ -510,6 +510,17 @@ class CheckoutView(APIView):
         try:
 
             cart = Cart.objects.get(user=request.user)
+            coupon_code = request.data.get('coupon_code', None)
+
+            if coupon_code:
+                try:
+                    coupon = CouponCode.objects.get(code=coupon_code, expired=False)
+                except CouponCode.DoesNotExist:
+                    return custom_response({}, "Invalid coupon code", status.HTTP_400_BAD_REQUEST, "error")
+                if not coupon.is_valid():
+                    return custom_response({}, "Coupon code has expired", status.HTTP_400_BAD_REQUEST, "error")
+
+                cart.apply_coupon(coupon)
 
             order_serializer = OrderSerializer(data={'user': request.user.id, 'cart': cart.id})
             if order_serializer.is_valid():
@@ -538,3 +549,20 @@ class CheckoutView(APIView):
                 "error_message": f"An error occurred during checkout: {str(e)}",
             }
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
+class CouponCodeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            coupons = CouponCode.objects.filter(expired=False)
+            serializer = CouponCodeSerializer(coupons, many=True)
+            return custom_response(serializer.data, "Coupons retrieved successfully", status.HTTP_200_OK, "error")
+
+        except Exception as e:
+            data = {
+                "error_message": f"An error occurred while fetching coupons: {str(e)}",
+            }
+            return custom_response(data, status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+

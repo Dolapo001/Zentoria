@@ -1,6 +1,16 @@
 from rest_framework import serializers
 
 
+def validate_coupon_dates(valid_from, valid_to):
+    if valid_from and valid_to and valid_from > valid_to:
+        raise serializers.ValidationError("Valid from date must be before or equal to valid to date.")
+
+
+def validate_coupon_validity(coupon):
+    if not coupon.is_valid():
+        raise serializers.ValidationError("Coupon is not valid.")
+
+
 def validate_quantity(value):
     if value <= 0:
         raise serializers.ValidationError("Quantity must be greater than zero.")
@@ -32,14 +42,4 @@ def validate_coupon_dates(valid_from, valid_to):
     if valid_from and valid_to and valid_from > valid_to:
         raise serializers.ValidationError("Valid from date must be before or equal to valid to date.")
 
-
-def validate_discount_percentage(value):
-    if value < 0 or value > 100:
-        raise serializers.ValidationError("Discount percentage must be between 0 and 100.")
-    return value
-
-
-def validate_flash_sale_dates(start_time, end_time):
-    if start_time and end_time and start_time > end_time:
-        raise serializers.ValidationError("Start time must be before or equal to end time.")
 

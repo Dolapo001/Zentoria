@@ -9,3 +9,5 @@ staticfiles/
 
 myenv/
 .evv
+
+.secret_keys
