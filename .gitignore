@@ -10,4 +10,4 @@ staticfiles/
 myenv/
 .evv
 
-secret_keys
+secret_keys.py
