@@ -11,3 +11,4 @@ myenv/
 .evv
 
 secret_keys.py
+.env

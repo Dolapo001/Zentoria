@@ -23,6 +23,8 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
 
+AUTH_PROVIDERS = {'google': 'google',
+                  'email': 'email'}
 
 class User(AbstractUser):
     MALE = 'M'
@@ -33,6 +35,7 @@ class User(AbstractUser):
         (FEMALE, 'Female'),
     ]
     email = models.EmailField(unique=True)
+    auth_provider = models.CharField(max_length=255, blank=False, null=False, default=AUTH_PROVIDERS.get('email'))
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     fullname = models.CharField(max_length=100)
     gender = models.CharField(max_length=10, choices=[('male', 'Male'), ('female', 'Female')], blank=True)

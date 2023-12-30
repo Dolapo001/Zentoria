@@ -11,7 +11,8 @@ from .views import (
     SendOTPView,
     ResendOTPView,
     ChangeEmailView,
-    VerificationView
+    VerificationView,
+    GoogleSocialAuthView
 )
 
 urlpatterns = [
@@ -27,4 +28,5 @@ urlpatterns = [
     path('resend-otp/', ResendOTPView.as_view(), name='resend-otp'),
     path('change-email/', ChangeEmailView.as_view(), name='change-email'),
     path('verification/', VerificationView.as_view(), name='verification'),
+    path('google/', GoogleSocialAuthView.as_view()),
 ]

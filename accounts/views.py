@@ -1,5 +1,6 @@
 import string
 import random
+from rest_framework import status
 from django.utils import timezone
 from datetime import timedelta
 import pyotp
@@ -15,6 +16,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenBlacklistView
 )
+
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
@@ -37,7 +39,8 @@ from .serializers import (
     ChangePasswordSerializer,
     RequestEmailChangeCodeSerializer,
     LoginSerializer,
-    SendOTPSerializer
+    SendOTPSerializer,
+    GoogleSocialAuthSerializer
 )
 
 
@@ -342,3 +345,14 @@ class VerificationView(APIView):
                 "error_message": f"An error occurred during account verification: {str(e)}",
             }
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GoogleSocialAuthView(APIView):
+    serializer_class = GoogleSocialAuthSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = (serializer.validated_data['auth_token'])
+        return Response(data, status=status.HTTP_200_OK)
+

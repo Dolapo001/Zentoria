@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import Cart, CartItem, Payment, Order, OrderItem, ShippingAddress, Coupon, Offer, Feed, Notification, \
-    FlashSale, CouponUsage
+from .models import Cart, CartItem, Payment, Order, OrderItem, ShippingAddress, CouponCode
 
 # Register your models here.
 
@@ -56,53 +55,10 @@ admin.site.register(ShippingAddress, AddressAdmin)
 
 
 class CouponAdmin(admin.ModelAdmin):
-    list_display = ('code', 'discount_percentage', 'valid_from', 'valid_to', 'is_valid')
+    list_display = ('code', 'price', 'created_at', 'updated_at', 'expired', 'expiry_date', 'is_valid')
     search_fields = ('code',)
-    list_filter = ('valid_from', 'valid_to')
+    list_filter = ('expired', 'expiry_date')
 
 
-admin.site.register(Coupon, CouponAdmin)
+admin.site.register(CouponCode, CouponAdmin)
 
-
-class OfferAdmin(admin.ModelAdmin):
-    list_display = ('title', 'discount_percentage')
-    filter_horizontal = ('products',)
-
-
-admin.site.register(Offer, OfferAdmin)
-
-
-class FeedAdmin(admin.ModelAdmin):
-    list_display = ('title', 'content', 'created_at')
-    search_fields = ('title',)
-
-
-admin.site.register(Feed, FeedAdmin)
-
-
-class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'content', 'created_at', 'is_read')
-    search_fields = ('user__username', 'content')
-    list_filter = ('created_at', 'is_read')
-
-
-admin.site.register(Notification, NotificationAdmin)
-
-
-class FlashSaleAdmin(admin.ModelAdmin):
-    list_display = ('title', 'start_time', 'end_time', 'discount_percentage', 'is_active')
-    filter_horizontal = ('products',)
-    search_fields = ('title',)
-    list_filter = ('start_time', 'end_time')
-
-
-admin.site.register(FlashSale, FlashSaleAdmin)
-
-
-class CouponUsageAdmin(admin.ModelAdmin):
-    list_display = ('user', 'coupon', 'used_at')
-    search_fields = ('user__username', 'coupon__code')
-    date_hierarchy = 'used_at'
-
-
-admin.site.register(CouponUsage, CouponUsageAdmin)
