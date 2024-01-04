@@ -19,3 +19,6 @@ dj-database-url
 python-decouple
 django-jazzmin
 drf_spectacular
+django-cors-headers
+django-allauth
+django-rest-authtoken
