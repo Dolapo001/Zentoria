@@ -12,3 +12,8 @@ google-api-python-client==1.12.1
 google-auth==1.21.2
 google-auth-httplib2==0.0.4
 googleapis-common-protos==1.52.0
+psycopg2
+gunicorn==21.2.0
+whitenoise==6.5.0
+dj-database-url
+python-decouple
