@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'allauth',
+    'social_django',
     'allauth.account',
     'corsheaders',
     'rest_framework.authtoken',
