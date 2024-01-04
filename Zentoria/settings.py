@@ -40,7 +40,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-)z@f0k(bz25!5470=u0b+%gji!ya^_1+o#4_^*8j)mdywu2u6i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['zentoria-production.up.railway.app', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://zentoria-production.up.railway.app/', 'http://localhost:3000']
