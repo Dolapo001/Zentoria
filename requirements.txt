@@ -18,3 +18,4 @@ whitenoise==6.5.0
 dj-database-url
 python-decouple
 django-jazzmin
+drf_spectacular
