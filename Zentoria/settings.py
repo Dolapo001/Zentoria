@@ -44,7 +44,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['zentoria-production.up.railway.app', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://zentoria-production.up.railway.app/']
-
+CORS_ALLOW_ALL_ORIGINS = True
 # Application definition
 
 INSTALLED_APPS = [
