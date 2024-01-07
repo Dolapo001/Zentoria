@@ -23,8 +23,10 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
 
+
 AUTH_PROVIDERS = {'google': 'google',
                   'email': 'email'}
+
 
 class User(AbstractUser):
     MALE = 'M'
