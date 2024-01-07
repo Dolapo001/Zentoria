@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import User
+#from accounts.models import User
 import random
 import string
 import uuid
@@ -103,7 +103,7 @@ class Product(models.Model):
 
 class ProductReview(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
     rating = models.PositiveIntegerField()
     review_text = models.TextField()
     review_date = models.DateTimeField(auto_now_add=True)
@@ -114,7 +114,7 @@ class ProductReview(models.Model):
 
 
 class FavouriteProduct(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorites')
     date_added = models.DateTimeField(auto_now_add=True)
 

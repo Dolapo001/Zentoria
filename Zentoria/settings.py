@@ -14,10 +14,10 @@ from datetime import timedelta
 from pathlib import Path
 import os
 
-from django.template.context_processors import static
+#from django.template.context_processors import static
 from dotenv import load_dotenv
 
-from rest_framework import authtoken
+#from rest_framework import authtoken
 
 from .jazzmin import JAZZMIN_SETTINGS
 import dj_database_url
@@ -41,6 +41,8 @@ SECRET_KEY = 'django-insecure-)z@f0k(bz25!5470=u0b+%gji!ya^_1+o#4_^*8j)mdywu2u6i
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+APPEND_SLASH = True
 
 ALLOWED_HOSTS = ['zentoria-production.up.railway.app', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://zentoria-production.up.railway.app/', 'http://localhost:3000']
@@ -69,9 +71,9 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
 
     #local_apps
-    'Products.apps.ProductsConfig',
-    'accounts.apps.AccountsConfig',
-    'store.apps.StoreConfig',
+    'Products',
+    'accounts',
+    'store',
 ]
 
 

@@ -19,18 +19,19 @@ from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
-urlpatterns_v1 = [
-    path('accounts/', include('accounts.urls')),
-    path("products/", include("Products.urls")),
-    path("store/", include("store.urls")),
-]
+#urlpatterns_v1 = [
+    #path('accounts/', include('accounts.urls')),
+    #path("products/", include("Products.urls")),
+    #path("store/", include("store.urls")),
+#]
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path("api/v1/", include(urlpatterns_v1)),
+    #path("api/v1/", include('accounts.urls')),
+    #path("api/v1/", include('Products.urls')),
+    #path("api/v1/", include('store.urls')),
 ]
 
-
-urlpatterns += staticfiles_urlpatterns()
+#urlpatterns += staticfiles_urlpatterns()
