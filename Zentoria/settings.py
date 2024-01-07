@@ -43,7 +43,6 @@ SECRET_KEY = 'django-insecure-)z@f0k(bz25!5470=u0b+%gji!ya^_1+o#4_^*8j)mdywu2u6i
 DEBUG = False
 #DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
-APPEND_SLASH = True
 
 ALLOWED_HOSTS = ['zentoria-production.up.railway.app', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://zentoria-production.up.railway.app', 'http://localhost:3000']
@@ -210,19 +209,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATIC_URL = '/static/'
-MEDIA_URL = '/images/'
-
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
-    (BASE_DIR / 'static')
+
+    os.path.join(BASE_DIR, "static")
 ]
-MEDIA_ROOT = os.path.join(BASE_DIR, 'static/images')
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
