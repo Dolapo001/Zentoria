@@ -3,6 +3,14 @@ from django.http import Http404
 from django.utils import timezone
 from rest_framework.generics import get_object_or_404
 from accounts.models import OTP
+import random
+import string
+
+
+def generate_verification_code(length=6):
+    characters = string.ascii_letters + string.digits
+    verification_code = ''.join(random.choice(characters) for _ in range(length))
+    return verification_code
 
 
 def get_or_generate_otp_secret(user):

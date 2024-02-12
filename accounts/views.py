@@ -1,6 +1,5 @@
 import string
 import random
-from rest_framework import status
 from django.utils import timezone
 from datetime import timedelta
 import pyotp
@@ -16,7 +15,6 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenBlacklistView
 )
-
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
@@ -26,9 +24,9 @@ from utils import custom_response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .emails import send_mail, send_otp_email
-from .models import OTP, User, Profile
-from .otp_utils import get_or_generate_otp_secret, generate_otp, validate_otp
+from .emails import send_verification_code_email, send_otp_email
+from .models import User, Profile
+from .otp_utils import get_or_generate_otp_secret, generate_otp, validate_otp, generate_verification_code
 from .serializers import (
     RegisterSerializer,
     ResendOTPSerializer,
@@ -45,9 +43,25 @@ from .serializers import (
 
 
 class UserRegistrationView(APIView):
+
+    """
+    API endpoint for user registration.
+
+    - Receives user registration data.
+    - Creates a new uer, generates a verification code, and sends and sends an email for verification.
+    """
     serializer_class = RegisterSerializer
 
     def post(self, request):
+        """
+        Handles POST requests for user registration
+
+        :param request: The HTTP request object.
+
+        :returns: JSON response indicating the status of the user creation process.
+
+        """
+
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -58,6 +72,12 @@ class UserRegistrationView(APIView):
                                             username=validated_data['username'],
                                             password=password,
                                             fullname=validated_data['fullname'])
+
+            verification_code = generate_verification_code()
+            user_profile = Profile.objects.create(user=user, verification_code=verification_code)
+
+            send_verification_code_email(user_profile, verification_code)
+
             return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
 
         except IntegrityError:
@@ -66,9 +86,23 @@ class UserRegistrationView(APIView):
 
 
 class LoginView(TokenObtainPairView):
+    """
+    API endpoint for user login.
+
+    - Authenticates user credentials and provides JWT tokens
+    """
     serializer_class = TokenObtainPairSerializer
 
-    def post(self, request):
+    def post(self, request, **kwargs):
+
+        """
+        Handles POST requests for user login.
+
+        :param: request: The HTTP request object.
+
+        :returns: JSON response indicating the status of the login process
+
+        """
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -97,9 +131,22 @@ class LoginView(TokenObtainPairView):
 
 
 class RefreshTokenView(TokenRefreshView):
+    """
+    API endpoint for refreshing JWT tokens.
+
+    - Allows users to refresh their expired access tokens.
+
+    """
     serializer_class = TokenRefreshSerializer
 
-    def post(self, request):
+    def post(self, request, **kwargs):
+        """
+        Handles POST requests for refreshing JWT tokens.
+
+        :param request: The HTTP request object.
+        :return: JSON response indicating the status of the token refresh process.
+        """
+
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -112,9 +159,24 @@ class RefreshTokenView(TokenRefreshView):
 
 
 class Logout(TokenBlacklistView):
+    """
+    API endpoint for user registration
+
+    - Blacklists the user's JWT token upon logout.
+
+    """
     serializer_class = TokenBlacklistSerializer
 
     def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests for user logout.
+
+        :param request: The HTTP request object.
+
+        :return: JSON response indicating the status of the logout process.
+
+        """
+
         serializer = self.serializer_class(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
@@ -124,15 +186,40 @@ class Logout(TokenBlacklistView):
 
 
 class ProfileView(APIView):
+    """
+    API endpoint for user profile management.
+
+    - Requires user authentication.
+    - Allows user to retrieve and update their profile.
+
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = ProfileSerializer
 
     def get(self, request):
+
+        """
+
+        Handles GET requests for retrieving user profile.
+
+        :param request: The HTTP request object.
+
+        :return: JSON response containing the user's profile data.
+
+        """
         user_profile = Profile.objects.get(user=request.user)
         serializer = self.serializer_class(user_profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request):
+        """
+        Handles PATCH requests for updating user profile.
+
+        :param request: The HTTP request object.
+
+        :return: JSON response that indicates the status of the profile update process
+
+        """
         user_profile = Profile.objects.get(user=request.user)
         serializer = self.serializer_class(user_profile, data=request.data, partial=True)
 
@@ -144,10 +231,27 @@ class ProfileView(APIView):
 
 
 class ChangePasswordView(APIView):
+
+    """
+    API endpoint for changing user password.
+
+    - Requires user authentication.
+    - Allows users to change their passwords.
+
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = ChangePasswordSerializer
 
     def post(self, request):
+        """
+        Handles POST requests for changing user password.
+
+        :param request: The HTTP request object.
+
+        :return: JSON response indicating the status of the password change process.
+
+        """
+
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             validated_data = serializer.validated_data
@@ -167,10 +271,26 @@ class ChangePasswordView(APIView):
 
 
 class RequestEmailChangeCodeView(APIView):
+    """
+    API endpoint for requesting an email change verification code.
+
+    - Requires user authentication.
+    - Allows users to request a code for changing their email address.
+
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = RequestEmailChangeCodeSerializer
 
     def post(self, request):
+
+        """
+        Handles POST requests for requesting an email change verification code.
+
+        :param request: The HTTP request objeect.
+
+        :return: JSON response indicating the status of the email change otp request.
+        """
+
         try:
             serializer = RequestEmailChangeCodeSerializer(data=request.data)
             if serializer.is_valid():
@@ -196,6 +316,9 @@ class RequestEmailChangeCodeView(APIView):
 
 
 class ResendEmailVerificationView(APIView):
+    """
+
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = ResendEmailVerificationSerializer
 
@@ -214,10 +337,8 @@ class ResendEmailVerificationView(APIView):
                 context = {'user': user, 'verification_token': new_verification_token}
                 message = render_to_string('email_verification.html', context)
                 plain_message = strip_tags(message)
-                from_email = 'your@example.com'
-                recipient_list = [user.email]
 
-                send_mail(subject, plain_message, from_email, recipient_list, html_message=message)
+                send_verification_code_email(subject, plain_message)
 
                 return Response({'message': 'Email verification resent successfully'}, status=status.HTTP_200_OK)
 
@@ -227,6 +348,7 @@ class ResendEmailVerificationView(APIView):
                 "error_message": f"An error occurred while resending email verification: {str(e)}",
             }
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class SendOTPView(APIView):
     permission_classes = [IsAuthenticated]
@@ -247,7 +369,6 @@ class SendOTPView(APIView):
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 class ResendOTPView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ResendOTPSerializer
@@ -266,6 +387,7 @@ class ResendOTPView(APIView):
             }
             return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 class ChangeEmailView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ChangeEmailSerializer
@@ -280,7 +402,7 @@ class ChangeEmailView(APIView):
             otp = get_or_generate_otp_secret(user)
 
             current_time = timezone.now()
-            expiration_time = otp.created + timedelta(mintues=10)
+            expiration_time = otp.created + timedelta()
 
             if current_time > expiration_time:
                 raise RequestError(err_code=ErrorCode.EXPIRED_OTP, err_msg="OTP has expired",
@@ -318,24 +440,14 @@ class VerificationView(APIView):
             serializer = VerifySerializer(data=request.data)
             if serializer.is_valid():
                 user = request.user
-                email = user.email
                 verification_code = serializer.validated_data['code']
 
-                if user.email == email and user.profile.verification_code == verification_code:
+                if user.profile.verification_code == verification_code:
 
-                    current_time = timezone.now()
-                    expiration_time = user.profile.otp_created + timedelta(minutes=10)
+                    user.profile.is_verified = True
+                    user.profile.save()
 
-                    if current_time > expiration_time:
-                        return Response({'error': 'OTP has expired'}, status=status.HTTP_400_BAD_REQUEST)
-
-                    if validate_otp(user, serializer.validated_data['code']):
-                        user.profile.is_verified = True
-                        user.profile.save()
-
-                        return Response({'message': 'Account successfully verified'}, status=status.HTTP_200_OK)
-                    else:
-                        return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'message': 'Account successfully verified'}, status=status.HTTP_200_OK)
                 else:
                     return Response({'error': 'Invalid verification code'}, status=status.HTTP_400_BAD_REQUEST)
 

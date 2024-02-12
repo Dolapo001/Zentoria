@@ -1,19 +1,13 @@
+<!-- verification_email_template.html -->
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Verification</title>
+    <title>Account Verification</title>
 </head>
 <body>
-    <p>Hello {{ user.username }},</p>
-
-    <p>Thank you for registering with us. Please verify your email by clicking the link below:</p>
-
-    <a href="{% url 'your_verification_url' verification_token=user.profile.verification_token %}">Verify Email</a>
-
-    <p>If you did not register on our site, please ignore this email.</p>
-
-    <p>Thank you!</p>
+    <p>Hello {{ user.fullname }},</p>
+    <p>Your verification code is: {{ verification_code }}</p>
+    <p>Thank you for registering!</p>
 </body>
 </html>

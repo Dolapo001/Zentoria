@@ -12,3 +12,5 @@ myenv/
 
 secret_keys.py
 .env
+db.py.env
+db.py

@@ -2,16 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Change Verification Code</title>
+    <title>OTP Verification Email</title>
 </head>
 <body>
     <p>Hello {{ user.username }},</p>
-
-    <p>Your email change verification code is: {{ user.email_change_code }}</p>
-
-    <p>Use this code to complete the email change process.</p>
-
+    <p>Your OTP for email change verification is: <strong>{{ otp }}</strong></p>
+    <p>Please use this OTP to complete the email change process.</p>
     <p>Thank you!</p>
 </body>
 </html>
