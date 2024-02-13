@@ -43,25 +43,25 @@ from .serializers import (
 
 
 class UserRegistrationView(APIView):
-
     """
     API endpoint for user registration.
 
-    - Receives user registration data.
-    - Creates a new uer, generates a verification code, and sends and sends an email for verification.
+        - Receives user registration data.
+
+        - Creates a new uer, generates a verification code, and sends and sends an email for verification.
+
+    Handles POST requests for user registration
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        Response: JSON response indicating the status of the user creation process.
+
     """
     serializer_class = RegisterSerializer
 
     def post(self, request):
-        """
-        Handles POST requests for user registration
-
-        :param request: The HTTP request object.
-
-        :returns: JSON response indicating the status of the user creation process.
-
-        """
-
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -89,20 +89,20 @@ class LoginView(TokenObtainPairView):
     """
     API endpoint for user login.
 
-    - Authenticates user credentials and provides JWT tokens
-    """
+        - Authenticates user credentials and provides JWT tokens
+
+    Handles POST requests for user login.
+
+    Args:
+         request: The HTTP request object.
+
+    Returns:
+         Response: JSON response indicating the status of the login process
+
+           """
     serializer_class = TokenObtainPairSerializer
 
     def post(self, request, **kwargs):
-
-        """
-        Handles POST requests for user login.
-
-        :param: request: The HTTP request object.
-
-        :returns: JSON response indicating the status of the login process
-
-        """
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -134,19 +134,19 @@ class RefreshTokenView(TokenRefreshView):
     """
     API endpoint for refreshing JWT tokens.
 
-    - Allows users to refresh their expired access tokens.
+        - Allows users to refresh their expired access tokens.
 
+    Handles POST requests for refreshing JWT tokens.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        Response: JSON response indicating the status of the token refresh process.
     """
     serializer_class = TokenRefreshSerializer
 
     def post(self, request, **kwargs):
-        """
-        Handles POST requests for refreshing JWT tokens.
-
-        :param request: The HTTP request object.
-        :return: JSON response indicating the status of the token refresh process.
-        """
-
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -162,20 +162,21 @@ class Logout(TokenBlacklistView):
     """
     API endpoint for user registration
 
-    - Blacklists the user's JWT token upon logout.
+        - Blacklists the user's JWT token upon logout.
+
+    Handles POST requests for user logout.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        Response: JSON response indicating the status of the logout process.
 
     """
     serializer_class = TokenBlacklistSerializer
 
     def post(self, request, *args, **kwargs):
-        """
-        Handles POST requests for user logout.
 
-        :param request: The HTTP request object.
-
-        :return: JSON response indicating the status of the logout process.
-
-        """
 
         serializer = self.serializer_class(data=request.data)
         try:
@@ -186,13 +187,6 @@ class Logout(TokenBlacklistView):
 
 
 class ProfileView(APIView):
-    """
-    API endpoint for user profile management.
-
-    - Requires user authentication.
-    - Allows user to retrieve and update their profile.
-
-    """
     permission_classes = [IsAuthenticated]
     serializer_class = ProfileSerializer
 
@@ -200,11 +194,19 @@ class ProfileView(APIView):
 
         """
 
+        API endpoint for user profile management.
+
+            - Requires user authentication.
+
+            - Allows user to retrieve their profile.
+
         Handles GET requests for retrieving user profile.
 
-        :param request: The HTTP request object.
+        Args:
+            request: The HTTP request object.
 
-        :return: JSON response containing the user's profile data.
+        Returns:
+            Response: JSON response containing the user's profile data.
 
         """
         user_profile = Profile.objects.get(user=request.user)
@@ -213,11 +215,21 @@ class ProfileView(APIView):
 
     def patch(self, request):
         """
+
+        API endpoint for user profile management.
+
+            - Requires user authentication.
+
+            - Allows user to update their profile.
+
         Handles PATCH requests for updating user profile.
 
-        :param request: The HTTP request object.
 
-        :return: JSON response that indicates the status of the profile update process
+        Args:
+            request: The HTTP request object.
+
+        :Returns:
+            Response: JSON response that indicates the status of the profile update process
 
         """
         user_profile = Profile.objects.get(user=request.user)
@@ -238,20 +250,20 @@ class ChangePasswordView(APIView):
     - Requires user authentication.
     - Allows users to change their passwords.
 
+
+    Handles POST requests for changing user password.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        Response: JSON response indicating the status of the password change process.
+
     """
     permission_classes = [IsAuthenticated]
     serializer_class = ChangePasswordSerializer
 
     def post(self, request):
-        """
-        Handles POST requests for changing user password.
-
-        :param request: The HTTP request object.
-
-        :return: JSON response indicating the status of the password change process.
-
-        """
-
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             validated_data = serializer.validated_data
@@ -274,23 +286,23 @@ class RequestEmailChangeCodeView(APIView):
     """
     API endpoint for requesting an email change verification code.
 
-    - Requires user authentication.
-    - Allows users to request a code for changing their email address.
+        - Requires user authentication.
+        - Allows users to request a code for changing their email address.
+
+
+    Handles POST requests for requesting an email change verification code.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+         Response: JSON response indicating the status of the email change otp request.
 
     """
     permission_classes = [IsAuthenticated]
     serializer_class = RequestEmailChangeCodeSerializer
 
     def post(self, request):
-
-        """
-        Handles POST requests for requesting an email change verification code.
-
-        :param request: The HTTP request objeect.
-
-        :return: JSON response indicating the status of the email change otp request.
-        """
-
         try:
             serializer = RequestEmailChangeCodeSerializer(data=request.data)
             if serializer.is_valid():
@@ -317,8 +329,21 @@ class RequestEmailChangeCodeView(APIView):
 
 class ResendEmailVerificationView(APIView):
     """
+    API endpoint for resending email verification.
 
+        - Requires user authentication.
+        - Allows users to re-request a code for changing their email address.
+
+
+    Handles POST requests for resend an email change verification code.
+
+    Args
+        request: The HTTP request object.
+
+    Returns:
+        Response: JSON response indicating the status of the email resend process.
     """
+
     permission_classes = [IsAuthenticated]
     serializer_class = ResendEmailVerificationSerializer
 
@@ -351,6 +376,21 @@ class ResendEmailVerificationView(APIView):
 
 
 class SendOTPView(APIView):
+    """
+    API endpoint for sending OTP.
+
+        - Requires user authentication.
+
+        - Allows users to receive OTP for various purposes.
+
+    Handles POST requests for sending a one-time password (OTP).
+
+    Args
+        request: The HTTP request object.
+
+    Returns:
+        Response: JSON response indicating the status of the OTP sending process.
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = SendOTPSerializer
 
@@ -370,6 +410,20 @@ class SendOTPView(APIView):
 
 
 class ResendOTPView(APIView):
+    """
+    API endpoint for resending a one-time password (OTP).
+
+        - Requires user authentication.
+        - Allows users to resend an OTP.
+
+    Handles POST requests for resending a one-time password (OTP).
+
+    Args:
+        Request: The HTTP request onject.
+    Returns:
+        Response: JSON response indicating the status of the OTP resend process.
+
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = ResendOTPSerializer
 
@@ -389,6 +443,21 @@ class ResendOTPView(APIView):
 
 
 class ChangeEmailView(APIView):
+    """
+    API endpoint for changing user email address.
+
+       - Requires user authentication.
+       - Allows users to change their email addresses.
+
+    Handles POST requests for changing user email address.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        Response: JSON response indicating the status of the email change process.
+
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = ChangeEmailSerializer
 
@@ -433,6 +502,21 @@ class ChangeEmailView(APIView):
 
 
 class VerificationView(APIView):
+    """
+    API endpoint for verifying user accounts.
+
+        - Requires user authentication.
+        - Allows users to verify their accounts using a verification code.
+
+    Handles POST requests for verifying user accounts.
+
+        Args:
+            request: The HTTP request object.
+
+        Returns:
+            Response: JSON response indicating the status of the account verification process.
+
+    """
     serializer_class = VerifySerializer
 
     def post(self, request):
@@ -460,6 +544,20 @@ class VerificationView(APIView):
 
 
 class GoogleSocialAuthView(APIView):
+    """
+       API endpoint for Google social authentication.
+
+       - Allows users to authenticate using their Google account.
+
+    Handles POST requests for Google social authentication.
+
+        Args:
+            request: The HTTP request object.
+
+        Returns:
+            Response: JSON response indicating the status of the Google social authentication process.
+
+    """
     serializer_class = GoogleSocialAuthSerializer
 
     def post(self, request):
