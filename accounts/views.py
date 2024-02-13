@@ -52,11 +52,11 @@ class UserRegistrationView(APIView):
 
     Handles POST requests for user registration
 
-    Args:
-        request: The HTTP request object.
+        Args:
+            request: The HTTP request object.
 
-    Returns:
-        Response: JSON response indicating the status of the user creation process.
+        Returns:
+            Response: JSON response indicating the status of the user creation process.
 
     """
     serializer_class = RegisterSerializer
@@ -93,13 +93,13 @@ class LoginView(TokenObtainPairView):
 
     Handles POST requests for user login.
 
-    Args:
-         request: The HTTP request object.
+        Args:
+             request: The HTTP request object.
 
-    Returns:
-         Response: JSON response indicating the status of the login process
+        Returns:
+             Response: JSON response indicating the status of the login process
 
-           """
+    """
     serializer_class = TokenObtainPairSerializer
 
     def post(self, request, **kwargs):
@@ -138,11 +138,12 @@ class RefreshTokenView(TokenRefreshView):
 
     Handles POST requests for refreshing JWT tokens.
 
-    Args:
-        request: The HTTP request object.
+        Args:
+            request: The HTTP request object.
 
-    Returns:
-        Response: JSON response indicating the status of the token refresh process.
+        Returns:
+            Response: JSON response indicating the status of the token refresh process.
+
     """
     serializer_class = TokenRefreshSerializer
 
@@ -166,17 +167,16 @@ class Logout(TokenBlacklistView):
 
     Handles POST requests for user logout.
 
-    Args:
-        request: The HTTP request object.
+        Args:
+            request: The HTTP request object.
 
-    Returns:
-        Response: JSON response indicating the status of the logout process.
+        Returns:
+            Response: JSON response indicating the status of the logout process.
 
     """
     serializer_class = TokenBlacklistSerializer
 
     def post(self, request, *args, **kwargs):
-
 
         serializer = self.serializer_class(data=request.data)
         try:
@@ -191,9 +191,7 @@ class ProfileView(APIView):
     serializer_class = ProfileSerializer
 
     def get(self, request):
-
         """
-
         API endpoint for user profile management.
 
             - Requires user authentication.
@@ -202,11 +200,11 @@ class ProfileView(APIView):
 
         Handles GET requests for retrieving user profile.
 
-        Args:
-            request: The HTTP request object.
+            Args:
+                request: The HTTP request object.
 
-        Returns:
-            Response: JSON response containing the user's profile data.
+            Returns:
+                Response: JSON response containing the user's profile data.
 
         """
         user_profile = Profile.objects.get(user=request.user)
@@ -225,11 +223,11 @@ class ProfileView(APIView):
         Handles PATCH requests for updating user profile.
 
 
-        Args:
-            request: The HTTP request object.
+            Args:
+                request: The HTTP request object.
 
-        :Returns:
-            Response: JSON response that indicates the status of the profile update process
+            Returns:
+                Response: JSON response that indicates the status of the profile update process
 
         """
         user_profile = Profile.objects.get(user=request.user)
@@ -243,21 +241,19 @@ class ProfileView(APIView):
 
 
 class ChangePasswordView(APIView):
-
     """
     API endpoint for changing user password.
 
     - Requires user authentication.
     - Allows users to change their passwords.
 
-
     Handles POST requests for changing user password.
 
-    Args:
-        request: The HTTP request object.
+        Args:
+            request: The HTTP request object.
 
-    Returns:
-        Response: JSON response indicating the status of the password change process.
+        Returns:
+            Response: JSON response indicating the status of the password change process.
 
     """
     permission_classes = [IsAuthenticated]
@@ -289,14 +285,13 @@ class RequestEmailChangeCodeView(APIView):
         - Requires user authentication.
         - Allows users to request a code for changing their email address.
 
-
     Handles POST requests for requesting an email change verification code.
 
-    Args:
-        request: The HTTP request object.
+        Args:
+            request: The HTTP request object.
 
-    Returns:
-         Response: JSON response indicating the status of the email change otp request.
+        Returns:
+             Response: JSON response indicating the status of the email change otp request.
 
     """
     permission_classes = [IsAuthenticated]
@@ -334,14 +329,13 @@ class ResendEmailVerificationView(APIView):
         - Requires user authentication.
         - Allows users to re-request a code for changing their email address.
 
-
     Handles POST requests for resend an email change verification code.
 
-    Args
-        request: The HTTP request object.
+        Args
+            request: The HTTP request object.
 
-    Returns:
-        Response: JSON response indicating the status of the email resend process.
+        Returns:
+            Response: JSON response indicating the status of the email resend process.
     """
 
     permission_classes = [IsAuthenticated]
@@ -385,11 +379,11 @@ class SendOTPView(APIView):
 
     Handles POST requests for sending a one-time password (OTP).
 
-    Args
-        request: The HTTP request object.
+        Args
+            request: The HTTP request object.
 
-    Returns:
-        Response: JSON response indicating the status of the OTP sending process.
+        Returns:
+            Response: JSON response indicating the status of the OTP sending process.
     """
     permission_classes = [IsAuthenticated]
     serializer_class = SendOTPSerializer
@@ -418,10 +412,10 @@ class ResendOTPView(APIView):
 
     Handles POST requests for resending a one-time password (OTP).
 
-    Args:
-        Request: The HTTP request onject.
-    Returns:
-        Response: JSON response indicating the status of the OTP resend process.
+        Args:
+            request: The HTTP request object.
+        Returns:
+            Response: JSON response indicating the status of the OTP resend process.
 
     """
     permission_classes = [IsAuthenticated]
@@ -451,11 +445,11 @@ class ChangeEmailView(APIView):
 
     Handles POST requests for changing user email address.
 
-    Args:
-        request: The HTTP request object.
+        Args:
+            request: The HTTP request object.
 
-    Returns:
-        Response: JSON response indicating the status of the email change process.
+        Returns:
+            Response: JSON response indicating the status of the email change process.
 
     """
     permission_classes = [IsAuthenticated]

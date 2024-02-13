@@ -12,6 +12,21 @@ from .permissions import IsAuthorOrReadOnly
 
 
 class ProductListCategory(APIView):
+    """
+    API endpoint for retrieving a list of products by category.
+
+        - Allows users to get a list of products based on the specified category.
+
+    Handles GET requests for retrieving products by category ID.
+
+        Args:
+            request: The HTTP request object.
+            category_id: The ID of the category for which products are requested.
+
+        Returns:
+            Response: JSON response containing a list of products in the specified category.
+
+    """
     def get(self, request, category_id):
         try:
             products = Product.objects.filter(category=category_id)
@@ -31,6 +46,21 @@ class ProductListCategory(APIView):
 
 
 class ProductListSubCategory(APIView):
+    """
+    API endpoint for retrieving a list of products by subcategory.
+
+        - Allows users to get a list of products based on the specified subcategory.
+
+    Handles GET requests for retrieving products by subcategory ID.
+
+        Args:
+            request: The HTTP request object.
+            subcategory_id: The ID of the subcategory for which products are requested.
+
+        Returns:
+            Response: JSON response containing a list of products in the specified subcategory.
+
+    """
     def get(self, request, subcategory_id):
         try:
             products = Product.objects.filter(subcategory=subcategory_id)
@@ -50,6 +80,20 @@ class ProductListSubCategory(APIView):
 
 
 class CategoryList(APIView):
+    """
+    API endpoint for retrieving a list of all available categories.
+
+        - Allows users to get a list of all categories present in the system.
+
+    Handles GET requests for retrieving categories.
+
+        Args:
+            request: The HTTP request object.
+
+        Returns:
+            Response: JSON response containing a list of available categories.
+
+    """
     def get(self, request):
         try:
             categories = Category.objects.all()
@@ -68,6 +112,20 @@ class CategoryList(APIView):
 
 
 class SubCategoryList(APIView):
+    """
+    API endpoint for retrieving a list of all available subcategories.
+
+        - Allows users to get a list of all subcategories present in the system.
+
+    Handles GET requests for retrieving subcategories.
+
+        Args:
+            request: The HTTP request object.
+
+        Returns:
+            Response: JSON response containing a list of available subcategories.
+
+    """
     def get(self, request):
         try:
             subcategories = SubCategory.objects.all()
@@ -86,6 +144,21 @@ class SubCategoryList(APIView):
 
 
 class ProductDetail(APIView):
+    """
+    API endpoint for retrieving detailed information about a specific product.
+
+        - Allows users to get details about a product, including its reviews, ratings, colors, and sizes.
+
+    Handles GET requests for retrieving product details.
+
+        Args:
+            request: The HTTP request object.
+            product_id: The ID of the product for which details are requested.
+
+        Returns:
+            Response: JSON response containing detailed information about the requested product.
+
+    """
     def get(self, request, product_id):
         try:
             product = get_object_or_404(Product, id=product_id)
@@ -129,6 +202,21 @@ class ProductDetail(APIView):
 
 
 class SimilarProductRecommendation(APIView):
+    """
+    API endpoint for recommending similar products based on a given product.
+
+       - Allows users to get recommendations for products similar to the specified product.
+
+    Handles GET requests for recommending similar products.
+
+       Args:
+           request: The HTTP request object.
+           product_id: The ID of the product for which similar products are recommended.
+
+       Returns:
+           Response: JSON response containing a list of recommended similar products.
+
+    """
     def get(self, request, product_id):
         try:
             current_product = Product.objects.get(id=product_id)
@@ -159,6 +247,20 @@ class SimilarProductRecommendation(APIView):
 
 
 class ProductSearch(APIView):
+    """
+    API endpoint for searching products based on a provided query.
+
+        - Allows users to search for products by name using a search query.
+
+    Handles GET requests for searching products.
+
+        Args:
+            request: The HTTP request object.
+
+        Returns:
+            Response: JSON response containing a list of products matching the search query.
+
+    """
     def get(self, request):
         search_query = request.query_params.get('search', '')
         try:
@@ -178,6 +280,20 @@ class ProductSearch(APIView):
 
 
 class ProductFilter(APIView):
+    """
+    API endpoint for filtering products based on various criteria.
+
+       - Allows users to filter products by category, subcategory, price range, and other parameters.
+
+    Handles GET requests for filtering products.
+
+       Args:
+           request: The HTTP request object.
+
+       Returns:
+           Response: JSON response containing a list of filtered products.
+
+    """
     def get(self, request):
         try:
             category_id = request.query_params.get('category_id')
@@ -231,8 +347,24 @@ class ProductFilter(APIView):
                 "error_message": f"An error occurred while filtering products: {str(e)}",
             }
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
+
+
 class FavouriteProductList(APIView):
     def get(self, request):
+        """
+        API endpoint for retrieving a list of favorite products for the authenticated user.
+
+            - Allows users to get a list of products marked as favorites.
+
+        Handles GET requests for retrieving favorite products.
+
+            Args:
+                request: The HTTP request object.
+
+            Returns:
+                Response: JSON response containing a list of favorite products.
+
+        """
         user = request.user
         try:
             favourite_products = FavouriteProduct.objects.filter(user=user)
@@ -248,6 +380,20 @@ class FavouriteProductList(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def post(self, request):
+        """
+        API endpoint for adding a product to the user's favorites.
+
+            - Allows users to add a product to their list of favorite products.
+
+        Handles POST requests for adding a favorite product.
+
+            Args:
+                request: The HTTP request object.
+
+            Returns:
+                Response: JSON response indicating the success or failure of adding a favorite product.
+
+        """
         data = request.data
         data['user'] = request.user  # Set the current user as the owner
         serializer = FavouriteProductSerializer(data=data)
@@ -267,6 +413,21 @@ class FavouriteProductList(APIView):
 
 
 class FavouriteProductDetail(APIView):
+    """
+    API endpoint for managing individual favorite products.
+
+        - Allows users to add or remove products from their favorites.
+
+    Handles DELETE requests for removing a favorite product.
+
+        Args:
+            request: The HTTP request object.
+            favorite_product_id: The ID of the favorite product to be removed.
+
+        Returns:
+            Response: JSON response indicating the success or failure of removing a favorite product.
+
+    """
     def delete(self, request, favorite_product_id):
         user = request.user
         try:
@@ -281,6 +442,19 @@ class FavouriteProductDetail(APIView):
 
 
 class ProductReviewList(APIView):
+    """
+    API endpoint for retrieving a list of product reviews.
+
+        - Allows users to get a list of reviews for products.
+
+    Handles GET requests for retrieving product reviews.
+
+        Args:
+            request: The HTTP request object.
+
+        Returns:
+            Response: JSON response containing a list of product reviews.
+    """
     permission_classes = [IsAuthorOrReadOnly]
     def get(self, request):
         try:
@@ -299,8 +473,34 @@ class ProductReviewList(APIView):
 
 
 class ProductReviewDetail(APIView):
+    """
+    API endpoint for managing individual product reviews.
 
+        - Allows users to retrieve, add, update, or delete product reviews.
+
+    Handles POST, GET, PUT, and DELETE requests for managing product reviews.
+
+        Args:
+            request: The HTTP request object.
+
+        Returns:
+            Response: JSON response containing information about the requested product review operation.
+
+    """
     def post(self, request):
+        """
+        Add a new product review.
+
+            - Allows users to add a new review for a product.
+
+        Handles POST requests for adding a product review.
+
+            Args:
+                request: The HTTP request object.
+
+            Returns:
+                Response: JSON response indicating the success or failure of adding a product review.
+        """
         data = request.data
         data['user'] = request.user
 
@@ -320,9 +520,35 @@ class ProductReviewDetail(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def get_object(self, review_id):
+        """
+        Retrieve a specific product review.
+
+            - Allows users to retrieve details of a specific product review.
+
+            Args:
+                review_id: The ID of the product review to be retrieved.
+
+            Returns:
+                productReview: The retrieved product review object.
+                """
         return get_object_or_404(ProductReview, id=review_id)
 
     def delete(self, request, review_id):
+        """
+        Remove a product review.
+
+            - Allows users to remove a product review.
+
+        Handles DELETE requests for removing a product review.
+
+            Args:
+                request: The HTTP request object.
+                review_id: The ID of the product review to be removed.
+
+           Returns:
+               esponse: JSON response indicating the success or failure of removing a product review.
+
+        """
         try:
             review = self.get_object(review_id)
             review.delete()
@@ -334,6 +560,21 @@ class ProductReviewDetail(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def put(self, request, review_id):
+        """
+        Update a product review.
+
+            - Allows users to update a product review.
+
+        Handles PUT requests for updating a product review.
+
+            Args:
+                request: The HTTP request object.
+                review_id: The ID of the product review to be updated.
+
+            Returns:
+                Response: JSON response indicating the success or failure of updating a product review.
+
+        """
         review = self.get_object(review_id)
         data = request.data
         serializer = ProductReviewSerializer(review, data=data)

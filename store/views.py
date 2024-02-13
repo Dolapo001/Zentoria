@@ -12,11 +12,37 @@ from .serializers import CartSerializer, CartItemSerializer, OrderSerializer, Or
 
 
 class IsOrderOwner(BasePermission):
+    """
+    Custom permission to check if the user is the owner of the order.
+
+        Args:
+            request: The HTTP request object.
+            view: The view that the permission is checking against.
+            obj: The object being checked (in this case, the order).
+
+        Returns:
+            bool: True if the user is the owner of the order, False otherwise.
+
+    """
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user
 
 
 class CartListView(APIView):
+    """
+    API endpoint for creating and retrieving user carts.
+
+        - Requires user authentication.
+
+    Handle POST requests to create a new cart for the user.
+
+        Args:
+            request: The HTTP request object.
+
+        Returns:
+            Response: JSON response with the status of the cart creation.
+
+    """
     permission_classes = [IsAuthenticated]
     serializer_classes = CartSerializer
 
@@ -37,6 +63,19 @@ class CartListView(APIView):
 
 
 class CartItemListView(APIView):
+    """
+    API endpoint for managing cart items.
+
+        - Requires user authentication.
+    Handle POST requests to add a new item to the cart.
+
+        Args:
+            request: The HTTP request object.
+
+        Returns:
+            Response: JSON response with the status of the cart item creation.
+
+    """
     permission_classes = [IsAuthenticated]
     serializer_classes = CartItemSerializer
 
@@ -71,12 +110,40 @@ class CartView(APIView):
     serializer_classes = CartSerializer
 
     def get_cart_details(self, cart):
+        """
+        API endpoint for retrieving user carts.
+
+            - Requires user authentication.
+
+        Get detailed information about a specific cart.
+
+            Args:
+                cart: The Cart object.
+
+            Returns:
+                dict: Detailed information about the cart.
+
+        """
         serializer = CartSerializer(cart)
         item_details = CartItemSerializer(cart.cartitem_set.all(), many=True)
         serializer.data["item_details"] = item_details.data
         return serializer.data
 
     def get(self, request, cart_id):
+        """
+        API endpoint for retrieving user carts.
+
+            - Requires user authentication.
+        Handle GET requests to retrieve details of a specific cart.
+
+            Args:
+                request: The HTTP request object.
+                cart_id: The ID of the cart to retrieve.
+
+            Returns:
+                Response: JSON response with the cart details.
+
+        """
         try:
             cart = Cart.objects.get(id=cart_id)
             data = self.get_cart_details(cart)
@@ -94,6 +161,21 @@ class CartView(APIView):
                                    "error")
 
     def put(self, request, cart_id):
+        """
+        API endpoint for updating user carts.
+
+            - Requires user authentication.
+
+        Handle PUT requests to update details of a specific cart.
+
+            Args:
+                request: The HTTP request object.
+                cart_id: The ID of the cart to update.
+
+            Returns:
+                Response: JSON response with the updated cart details.
+
+        """
         try:
             cart = Cart.objects.get(id=cart_id)
             serializer = CartSerializer(cart, data=request.data)
@@ -119,6 +201,21 @@ class CartView(APIView):
                                    "error")
 
     def delete(self, request, cart_id):
+        """
+            API endpoint for retrieving, updating, and deleting user carts.
+
+            - Requires user authentication.
+
+        Handle DELETE requests to delete a specific cart.
+
+            Args:
+                request: The HTTP request object.
+                cart_id: The ID of the cart to delete.
+
+            Returns:
+                Response: JSON response with the status of the cart deletion.
+
+        """
         try:
             cart = Cart.objects.get(id=cart_id)
             cart.delete()
@@ -140,6 +237,21 @@ class CartItemView(APIView):
     serializer_classes = CartItemSerializer
 
     def get(self, request, cart_item_id):
+        """
+        API endpoint for managing individual cart items.
+
+            - Requires user authentication and ownership of the cart item.
+
+        Handle GET requests to retrieve details of a specific cart item.
+
+            Args:
+                request: The HTTP request object.
+                cart_item_id: The ID of the cart item to retrieve.
+
+            Returns:
+                Response: JSON response with the cart item details.
+
+        """
         try:
             cart_item = CartItem.objects.get(id=cart_item_id)
             serializer = CartItemSerializer(cart_item)
@@ -157,6 +269,21 @@ class CartItemView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def put(self, request, cart_item_id):
+        """
+        API endpoint for managing individual cart items.
+
+            - Requires user authentication and ownership of the cart item.
+
+        Handle PUT requests to update details of a specific cart item.
+
+            Args:
+                request: The HTTP request object.
+                cart_item_id: The ID of the cart item to update.
+
+            Returns:
+                Response: JSON response with the updated cart item details.
+
+        """
         try:
             cart_item = CartItem.objects.get(id=cart_item_id)
             serializer = CartItemSerializer(cart_item, data=request.data)
@@ -191,6 +318,20 @@ class OrderListView(APIView):
 
     @action(detail=False, methods=['get'])
     def get_orders(self, request):
+        """
+        API endpoint for retrieving user new orders.
+
+            - Requires user authentication and admin privileges for listing all orders.
+
+        Handle GET requests to retrieve a list of orders.
+
+            Args:
+                request: The HTTP request object.
+
+            Returns:
+                Response: JSON response with the list of orders.
+
+        """
         try:
             if not request.user.is_staff:
                 orders = Order.objects.filter(user=request.user)
@@ -211,6 +352,20 @@ class OrderListView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def post(self, request):
+        """
+        API endpoint for creating new orders.
+
+            - Requires user authentication and admin privileges for listing all orders.
+
+        Handle POST requests to create a new order.
+
+                Args:
+                    request: The HTTP request object.
+
+                Returns:
+                    Response: JSON response with the status of the order creation.
+
+        """
         try:
             status_filter = request.query_params.get('status')
             if status_filter:
@@ -242,6 +397,20 @@ class OrderItemList(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """
+        API endpoint for managing items within an order.
+
+            - Requires user authentication.
+
+        Handle POST requests to add a new item to an order.
+
+            Args:
+                request: The HTTP request object.
+
+            Returns:
+                Response: JSON response with the status of the order item creation.
+
+        """
         try:
             serializer = OrderItemSerializer(data=request.data)
             if serializer.is_valid():
@@ -269,16 +438,43 @@ class OrderItemList(APIView):
 
 
 class OrderView(APIView):
+    """
+    API endpoint for retrieving, updating, and deleting user orders.
+
+        - Requires user authentication and ownership of the order.
+
+    """
     permission_classes = [IsAuthenticated, IsOrderOwner]
     serializer_classes = OrderSerializer
 
     def get_order_details(self, order):
+        """
+        Get detailed information about a specific order.
+
+            Args:
+                order: The Order object.
+
+            Returns:
+                dict: Detailed information about the order.
+
+        """
         serializer = OrderSerializer(order)
         item_details = OrderItemSerializer(order.orderitem_set.all(), many=True)
         serializer.data["item_details"] = item_details.data
         return serializer.data
 
     def get(self, request, order_id):
+        """
+        Handle GET requests to retrieve details of a specific order.
+
+            Args:
+                request: The HTTP request object.
+                order_id: The ID of the order to retrieve.
+
+            Returns:
+                Response: JSON response with the order details.
+
+        """
         try:
             order = Order.objects.get(id=order_id, user=request.user)
             data = self.get_order_details(order)
@@ -292,6 +488,17 @@ class OrderView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def put(self, request, order_id):
+        """
+        Handle PUT requests to update details of a specific order.
+
+            Args:
+                request: The HTTP request object.
+                order_id: The ID of the order to update.
+
+            Returns:
+                Response: JSON response with the updated order details.
+
+        """
         try:
             order = Order.objects.get(id=order_id, user=request.user)
             serializer = OrderSerializer(order, data=request.data)
@@ -313,6 +520,17 @@ class OrderView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def delete(self, request, order_id):
+        """
+        Handle DELETE requests to delete a specific order.
+
+            Args:
+                request: The HTTP request object.
+                order_id: The ID of the order to delete.
+
+            Returns:
+                Response: JSON response with the status of the order deletion.
+
+        """
         try:
             order = Order.objects.get(id=order_id, user=request.user)
             order.delete()
