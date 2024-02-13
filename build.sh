@@ -1,2 +1,2 @@
 pip install -r requirements.txt
-python3.11 manag.py collectstactic
+python3.11.5 manag.py collectstactic
