@@ -20,13 +20,6 @@ from dotenv import load_dotenv
 #from rest_framework import authtoken
 
 from .jazzmin import JAZZMIN_SETTINGS
-import dj_database_url
-
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(
-        conn_max_age=500,
-        conn_health_checks=True,
-    )
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -44,11 +37,11 @@ DEBUG = False
 #DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
 
-ALLOWED_HOSTS = ['zentoria-production.up.railway.app', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://zentoria-production.up.railway.app', 'http://localhost:3000']
-CORS_ALLOWED_ORIGINS = [
-    "https://zentoria-production.up.railway.app",
-]
+ALLOWED_HOSTS = ['.vercel.app', '.now.sh', '127.0.0.1']
+#CSRF_TRUSTED_ORIGINS = ['https://zentoria-production.up.railway.app', 'http://localhost:3000']
+#CORS_ALLOWED_ORIGINS = [
+ #   "https://zentoria-production.up.railway.app",
+#]
 # Application definition
 
 INSTALLED_APPS = [
