@@ -438,17 +438,15 @@ class OrderItemList(APIView):
 
 
 class OrderView(APIView):
-    """
-    API endpoint for retrieving, updating, and deleting user orders.
-
-        - Requires user authentication and ownership of the order.
-
-    """
     permission_classes = [IsAuthenticated, IsOrderOwner]
     serializer_classes = OrderSerializer
 
     def get_order_details(self, order):
         """
+        API endpoint for retrieving, updating, and deleting user orders.
+
+            - Requires user authentication and ownership of the order.
+
         Get detailed information about a specific order.
 
             Args:
@@ -465,6 +463,10 @@ class OrderView(APIView):
 
     def get(self, request, order_id):
         """
+        API endpoint for retrieving, updating, and deleting user orders.
+
+            - Requires user authentication and ownership of the order.
+
         Handle GET requests to retrieve details of a specific order.
 
             Args:
@@ -489,6 +491,10 @@ class OrderView(APIView):
 
     def put(self, request, order_id):
         """
+        API endpoint for retrieving, updating, and deleting user orders.
+
+            - Requires user authentication and ownership of the order.
+
         Handle PUT requests to update details of a specific order.
 
             Args:
@@ -521,6 +527,10 @@ class OrderView(APIView):
 
     def delete(self, request, order_id):
         """
+        API endpoint for retrieving, updating, and deleting user orders.
+
+            - Requires user authentication and ownership of the order.
+
         Handle DELETE requests to delete a specific order.
 
             Args:
@@ -549,6 +559,21 @@ class OrderItemView(APIView):
     serializer_classes = OrderItemSerializer
 
     def get(self, request, order_item_id):
+        """
+        API endpoint for managing individual items within an order.
+
+            - Requires user authentication and ownership of the order item.
+
+        Handle GET requests to retrieve details of a specific order item.
+
+            Args:
+                request: The HTTP request object.
+                order_item_id: The ID of the order item to retrieve.
+
+            Returns:
+                Response: JSON response with the order item details.
+
+        """
         try:
             order_item = OrderItem.objects.get(id=order_item_id, order__user=request.user)
             serializer = OrderItemSerializer(order_item)
@@ -562,6 +587,21 @@ class OrderItemView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def put(self, request, order_item_id):
+        """
+        API endpoint for managing individual items within an order.
+
+            - Requires user authentication and ownership of the order item.
+
+        Handle PUT requests to update details of a specific order item.
+
+            Args:
+                request: The HTTP request object.
+                order_item_id: The ID of the order item to update.
+
+            Returns:
+                Response: JSON response with the updated order item details.
+
+        """
         try:
             order_item = OrderItem.objects.get(id=order_item_id, order__user=request.user)
             serializer = OrderItemSerializer(order_item, data=request.data)
@@ -585,9 +625,23 @@ class OrderItemView(APIView):
 
 class PaymentView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = PaymentSerializer  # Fix typo: 'serializer_classes' to 'serializer_class'
+    serializer_class = PaymentSerializer
 
     def post(self, request):
+        """
+        API endpoint for managing payments associated with orders.
+
+            - Requires user authentication.
+
+        Handle POST requests to create a new payment for an order.
+
+            Args:
+                request: The HTTP request object.
+
+            Returns:
+                Response: JSON response with the status of the payment creation.
+
+        """
         try:
             serializer = PaymentSerializer(data={**request.data, 'user': request.user.id})
             if serializer.is_valid():
@@ -620,6 +674,21 @@ class PaymentDetailView(APIView):
     serializer_classes = PaymentSerializer
 
     def get(self, request, payment_id):
+        """
+        API endpoint for retrieving payment details.
+
+            - Requires user authentication.
+
+        Handle GET requests to retrieve details of a specific payment.
+
+            Args:
+                request: The HTTP request object.
+                payment_id: The ID of the payment to retrieve.
+
+            Returns:
+                Response: JSON response with the payment details.
+
+        """
         try:
             payment = Payment.objects.get(id=payment_id, order__user=request.user)
             serializer = PaymentSerializer(payment)
@@ -634,6 +703,21 @@ class PaymentDetailView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def put(self, request, payment_id):
+        """
+        API endpoint for retrieving, updating, and deleting payment details.
+
+            - Requires user authentication.
+
+        Handle PUT requests to update details of a specific payment.
+
+            Args:
+                request: The HTTP request object.
+                payment_id: The ID of the payment to update.
+
+            Returns:
+                Response: JSON response with the updated payment details.
+
+        """
         try:
             payment = Payment.objects.get(id=payment_id, user=request.user)
             serializer = PaymentSerializer(payment, data={**request.data, 'user': request.user.id})
@@ -650,6 +734,21 @@ class PaymentDetailView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def delete(self, request, payment_id):
+        """
+        API endpoint for retrieving, updating, and deleting payment details.
+
+            - Requires user authentication.
+
+        Handle DELETE requests to delete a specific payment.
+
+            Args:
+                request: The HTTP request object.
+                payment_id: The ID of the payment to delete.
+
+            Returns:
+                Response: JSON response with the status of the payment deletion.
+
+        """
         try:
             payment = Payment.objects.get(id=payment_id, user=request.user)
             payment.delete()
@@ -668,6 +767,21 @@ class AddressDetailView(APIView):
     serializer_classes = AddressSerializer
 
     def get(self, request, address_id):
+        """
+        API endpoint for retrieving, updating, and deleting shipping addresses.
+
+            - Requires user authentication.
+
+        Handle GET requests to retrieve details of a specific shipping address.
+
+            Args:
+                request: The HTTP request object.
+                address_id: The ID of the shipping address to retrieve.
+
+            Returns:
+                Response: JSON response with the shipping address details.
+
+        """
         try:
             address = ShippingAddress.objects.get(id=address_id, order__user=request.user)
             serializer = AddressSerializer(address)
@@ -682,6 +796,21 @@ class AddressDetailView(APIView):
         return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def put(self, request, address_id):
+        """
+        API endpoint for retrieving, updating, and deleting shipping addresses.
+
+            - Requires user authentication.
+
+        Handle PUT requests to update details of a specific shipping address.
+
+            Args:
+                request: The HTTP request object.
+                address_id: The ID of the shipping address to update.
+
+            Returns:
+                Response: JSON response with the updated shipping address details.
+
+        """
         try:
             address = ShippingAddress.objects.get(id=address_id, user=request.user)
             serializer = AddressSerializer(address, data={**request.data, 'user': request.user.id})
@@ -699,6 +828,21 @@ class AddressDetailView(APIView):
             return custom_response(data, "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR, "error")
 
     def delete(self, request, address_id):
+        """
+        API endpoint for retrieving, updating, and deleting shipping addresses.
+
+            - Requires user authentication.
+
+        Handle DELETE requests to delete a specific shipping address.
+
+            Args:
+                request: The HTTP request object.
+                address_id: The ID of the shipping address to delete.
+
+            Returns:
+                Response: JSON response with the status of the shipping address deletion.
+
+        """
         try:
             address = ShippingAddress.objects.get(id=address_id, user=request.user)
             address.delete()
@@ -713,10 +857,25 @@ class AddressDetailView(APIView):
 
 
 class AddressView(APIView):
+
     permission_classes = [IsAuthenticated]
     serializer_classes = AddressSerializer
 
     def post(self, request):
+        """
+        API endpoint for creating new shipping addresses.
+
+            - Requires user authentication.
+
+        Handle POST requests to create a new shipping address.
+
+            Args:
+                request: The HTTP request object.
+
+            Returns:
+                Response: JSON response with the status of the shipping address creation.
+
+        """
         try:
             serializer = AddressSerializer(data={**request.data, 'user': request.user.id})
             if serializer.is_valid():
@@ -737,6 +896,20 @@ class CheckoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """
+            API endpoint for handling the checkout process.
+
+            - Requires user authentication.
+
+        Handle POST requests to initiate the checkout process.
+
+            Args:
+                request: The HTTP request object.
+
+            Returns:
+                Response: JSON response with the status of the checkout process.
+
+        """
         try:
 
             cart = Cart.objects.get(user=request.user)
@@ -785,6 +958,20 @@ class CouponCodeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """
+        API endpoint for retrieving available coupon codes.
+
+            - Requires user authentication.
+
+        Handle GET requests to retrieve a list of available coupon codes.
+
+            Args:
+                request: The HTTP request object.
+
+            Returns:
+                Response: JSON response with the list of available coupon codes.
+
+        """
         try:
             coupons = CouponCode.objects.filter(expired=False)
             serializer = CouponCodeSerializer(coupons, many=True)
