@@ -1,27 +1,27 @@
 from django.template.loader import render_to_string
-from django.core.mail import send_mail
+from django.core.mail import send_mail, BadHeaderError
 from django.utils.html import strip_tags
 
 
 def send_verification_code_email(user, verification_code):
     subject = 'Account Verification'
-
-    html_message = render_to_string('email_verification.html',
-                                    {'user': user, 'verification_code': verification_code})
-
+    html_message = render_to_string('email_verification.html', {'user': user, 'verification_code': verification_code})
     plain_message = strip_tags(html_message)
-
     from_email = 'zentoria@admin.com'
     recipient_list = [user.email]
+    try:
+        send_mail(subject, plain_message, from_email, recipient_list, html_message=html_message)
+    except BadHeaderError as e:
+        print(f"Error occurred while sending verification email: {e}")
 
-    send_mail(subject, plain_message, from_email, recipient_list, html_message=html_message)
 
-
-def send_otp_email(user, email, otp, template='email_change_verification.html'):
+def send_otp_email(user, otp, template='email_change_verification.html'):
     subject = 'OTP Verification'
-    context = {'user': user, 'otp': otp}
-    message_html = render_to_string(template, context)
+    message_html = render_to_string(template, {'user': user, 'otp': otp})
     message_plain = strip_tags(message_html)
     from_email = 'zentoria@admin.com'
-    recipient_list = [email]
-    send_mail(subject, message_plain, from_email, recipient_list, html_message=message_html)
+    recipient_list = [user.email]
+    try:
+        send_mail(subject, message_plain, from_email, recipient_list, html_message=message_html)
+    except BadHeaderError as e:
+        print(f"Error occurred while sending OTP email: {e}")
