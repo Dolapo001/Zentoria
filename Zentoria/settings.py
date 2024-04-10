@@ -34,7 +34,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-)z@f0k(bz25!5470=u0b+%gji!ya^_1+o#4_^*8j)mdywu2u6i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 #DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
 
@@ -205,14 +205,14 @@ USE_TZ = True
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles_build", 'static')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
+    os.path.join(BASE_DIR, "staticfiles_build"),
 ]
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
