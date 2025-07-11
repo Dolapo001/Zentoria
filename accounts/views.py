@@ -60,7 +60,7 @@ class UserRegistrationView(APIView):
 
     """
     serializer_class = RegisterSerializer
-
+    @transaction.atomic
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -68,10 +68,7 @@ class UserRegistrationView(APIView):
         validated_data = serializer.validated_data
         password = validated_data.pop('password', None)
         try:
-            user = User.objects.create_user(email=validated_data['email'],
-                                            username=validated_data['username'],
-                                            password=password,
-                                            fullname=validated_data['fullname'])
+            user = User.objects.create_user(**validated_data)
 
             verification_code = generate_verification_code()
             user_profile = Profile.objects.create(user=user, verification_code=verification_code)

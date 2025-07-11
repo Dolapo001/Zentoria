@@ -2,8 +2,8 @@ from django.template.loader import render_to_string
 from django.core.mail import send_mail, BadHeaderError
 from django.utils.html import strip_tags
 
-
-def send_verification_code_email(user, verification_code):
+User = get_user_model()
+def send_verification_code_email(user: User, verification_code: str) -> None:
     subject = 'Account Verification'
     html_message = render_to_string('email_verification.html', {'user': user, 'verification_code': verification_code})
     plain_message = strip_tags(html_message)
